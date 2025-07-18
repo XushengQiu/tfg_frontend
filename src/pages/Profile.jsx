@@ -6,7 +6,6 @@ import { getProfile, deleteAccount as deleteAPI } from '../services/api';
 import '../index.css';               // opcional si lo separas
 
 export default function Profile() {
-    const { user, logout, deleteAccount } = useAuth();
     const [profile, setProfile]   = useState(null);
     const [confirm, setConfirm]   = useState(false);   // muestra modal confirmación
     const [error,   setError]     = useState(false);   // muestra modal error
