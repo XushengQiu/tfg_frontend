@@ -1,63 +1,79 @@
 import {
     onAuthStateChanged,
     signInWithPopup,
+    signOut,
+    deleteUser,
     getAdditionalUserInfo,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from './firebase';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { auth, googleProvider } from './firebase';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProfile, deleteAccount as deleteAccountAPI } from './services/api';
 
-const AuthCtx   = createContext();
+const AuthCtx = createContext();
 export const useAuth = () => useContext(AuthCtx);
 
 export function AuthProvider({ children }) {
-    const [user,    setUser]    = useState(null);   // sesión Firebase Auth
-    const [profile, setProfile] = useState(null);   // documento en Firestore
+    const [user,    setUser]    = useState(null);   // Firebase user
+    const [profile, setProfile] = useState(null);   // datos de tu API
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+    const navigate              = useNavigate();
 
-    /* Escucha cambios de sesión */
+    /** escucha sesión Firebase */
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, async (fbUser) => {
             setUser(fbUser);
 
-            if (!fbUser) {                   // ── NO logueado
+            if (!fbUser) {                           // no log-in
                 setProfile(null);
                 navigate('/login', { replace:true });
                 setLoading(false);
                 return;
             }
 
-            /* Intenta leer el perfil en Firestore */
-            const ref  = doc(db, 'users', fbUser.uid);
-            const snap = await getDoc(ref);
-
-            if (snap.exists()) {             // ── Usuario ya tiene perfil
-                setProfile(snap.data());
-                navigate('/dashboard', { replace:true });
-            } else {                         // ── Primera vez
+            /* ya logueado -> intenta traer su perfil */
+            try {
+                const { data } = await getProfile();
+                setProfile(data);
+            } catch {                                // 404 si aún no existe en tu BD
                 setProfile(null);
-                navigate('/onboarding', { replace:true });
             }
-
             setLoading(false);
         });
-
-        return () => unsub();
+        return unsub;
     }, [navigate]);
 
-    /* ---------- Login con Google ---------- */
+    /** Google sign-in */
     const login = async () => {
-        const res = await signInWithPopup(auth, googleProvider);
+        const res   = await signInWithPopup(auth, googleProvider);
         const isNew = getAdditionalUserInfo(res).isNewUser;
 
-        if (isNew)       navigate('/onboarding', { replace:true });
-        else             navigate('/dashboard',  { replace:true });
+        if (isNew) navigate('/onboarding', { replace:true });
+        else       navigate('/dashboard',  { replace:true });
     };
 
-    const value = { user, profile, login };
+    /** logout */
+    const logout = () => signOut(auth);
 
-    if (loading) return null;            // spinner si quieres
-    return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+    /** borrar cuenta: API → Auth */
+    const deleteAccount = async () => {
+        // 1) elimina en tu backend
+        await deleteAccountAPI();
+        // 2) elimina en Firebase Auth
+        await deleteUser(auth.currentUser);
+        // onAuthStateChanged se encargará de redirigir a /login
+    };
+
+    if (loading) return null;
+
+    return (
+        <AuthCtx.Provider value={{ user, profile, login, logout, deleteAccount }}>
+            {children}
+        </AuthCtx.Provider>
+    );
 }

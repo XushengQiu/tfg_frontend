@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './auth-context';
 import Login       from './pages/Login';
 import Onboarding  from './pages/Onboarding';
 import Dashboard   from './pages/Dashboard';
+import Profile from './pages/Profile';
 
 /* ─── Wrapper que SOLO muestra children si hay sesión ─── */
 function Protected({ children }) {
@@ -22,6 +23,7 @@ export default function App() {
                     <Route path="/login"       element={<Login />} />
                     <Route path="/onboarding"  element={<Protected><Onboarding /></Protected>} />
                     <Route path="/dashboard"   element={<Protected><Dashboard  /></Protected>} />
+                    <Route path="/profile"   element={<Protected><Profile   /></Protected>} />
 
                     {/* 404: cualquier otra URL */}
                     <Route path="*" element={<Navigate to="/login" replace />} />
