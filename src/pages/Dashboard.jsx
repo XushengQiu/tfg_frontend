@@ -1,10 +1,10 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Dashboard.jsx
-// Dashboard principal   –   sin Tailwind  –   UI en CSS propio
 // ───────────────────────────────────────────────────────────────
 import React, { useEffect, useState } from "react";
-import { useNavigate }                from "react-router-dom";
-import { useAuth }                    from "../auth-context";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth-context";
+
 import {
     getProfile,
     getGoalById,
@@ -13,255 +13,249 @@ import {
     deleteGoal,
     finalizeGoal,
 } from "../services/api";
+
 import "../index.css";
 
-/* util: capitalizar (“meses” → “Meses”) */
+/* capitaliza la primera letra */
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Dashboard() {
-    const { profile, user } = useAuth();
+    const { user, profile } = useAuth();
     const navigate = useNavigate();
 
-    /*──────────────── estado ────────────────*/
-    const [goals,   setGoals]   = useState([]);
-    const [stats,   setStats]   = useState(null);
+    /* ───── estado ───── */
+    const [goals, setGoals] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedGoal, setSelectedGoal] = useState(null);
 
-    /*──────── modal Crear meta ───────*/
+    /* modal crear meta */
     const [openNew, setOpenNew] = useState(false);
-    const resetForm = () => setNewGoal({
-        nombre:"",
+    const emptyGoal = {
+        nombre: "",
+        periodoIndef: false,
+        periodoNum: "",
+        periodoUnit: "dias",
+        tipo: "num",
+        objetivoNum: "",
+        objetivoUnidad: "",
+        descripcion: "",
+        fechaInicio: new Date().toISOString().substring(0, 10),
+    };
+    const [newGoal, setNewGoal] = useState(emptyGoal);
 
-        periodoIndef:false,
-        periodoNum:"",
-        periodoUnit:"dias",
+    /* ───── función para traer / refrescar todo ───── */
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const { data } = await getProfile();
 
-        tipo:"num",
-        objetivoNum:"",
-        objetivoUnidad:"",
+            const metasDetalladas = await Promise.all(
+                data.metas.map(async (m) => {
+                    try {
+                        const { data: det } = await getGoalById(m._id);
+                        return { ...m, ...det };
+                    } catch {
+                        return m; // si falla el detalle, nos quedamos con la parcial
+                    }
+                })
+            );
 
-        descripcion:"",
-        fechaInicio:new Date().toISOString().substring(0,10)
-    });
-    const [newGoal, setNewGoal] = useState(() => ({}));
-    useEffect(resetForm, []);
+            setGoals(metasDetalladas);
+            setStats(data.estadisticas);
+        } catch (err) {
+            console.error(err);
+            alert("No se pudieron cargar los datos.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    /*──────── carga inicial ─────────*/
-    useEffect(() => {
-        (async () => {
-            try {
-                const { data } = await getProfile();
+    useEffect(() => { loadData(); }, []);
 
-                /* metas numéricas → añadir valorObjetivo + unidad            */
-                const metasConDetalles = await Promise.all(
-                    data.metas.map(async (m) => {
-                        if (m.tipo === "Num") {
-                            try {
-                                const { data: det } = await getGoalById(m._id);
-                                return { ...m, valorObjetivo:det.valorObjetivo, unidad:det.unidad };
-                            } catch {/* ignora error */}
-                        }
-                        return m;
-                    })
-                );
+    /* ───── helpers ───── */
+    const handleSelectGoal = (g) =>
+        setSelectedGoal((cur) => (cur?._id === g._id ? null : g));
 
-                setGoals(metasConDetalles);
-                setStats(data.estadisticas);
-            } catch (err) { console.error(err); }
-            finally        { setLoading(false); }
-        })();
-    }, []);
+    const handleFinalize = async (id) => {
+        if (!window.confirm("¿Marcar esta meta como COMPLETADA?")) return;
+        try {
+            await finalizeGoal(id);
+            await loadData();
+        } catch (err) {
+            console.error(err);
+            alert("No se pudo finalizar la meta.");
+        }
+    };
 
-    /*──────── helpers fila tabla ─────*/
+    const handleDelete = async (id) => {
+        if (!window.confirm("¿Eliminar esta meta? Esta acción es irreversible.")) return;
+        try {
+            await deleteGoal(id);
+            await loadData();
+        } catch (err) {
+            console.error(err);
+            alert("No se pudo eliminar la meta.");
+        }
+    };
+
+    const objectiveLabel = (g) => {
+        if (g.tipo === "Bool") return "Boolean";
+        const val =
+            g.valorObjetivo ?? g.valor ?? g.objetivo ?? g.objetivoValor ?? undefined;
+        const unit = g.unidad ?? g.unidadMedida ?? "";
+        return val !== undefined ? `${val} ${unit}`.trim() : "-";
+    };
+
+    /* ───── tabla fila ───── */
     const GoalRow = ({ goal }) => (
         <tr
             className={`goal-row ${goal.finalizado ? "goal-row-finalizada" : ""}`}
-            onClick={() => setSelectedGoal(goal._id === selectedGoal?._id ? null : goal)}
+            onClick={() => handleSelectGoal(goal)}
         >
-            {/* ─── nombre ─── */}
             <td className="goal-cell">{goal.nombre}</td>
 
-            {/* ─── periodo ─── */}
             <td className="goal-cell">
                 {goal.duracionUnidad === "Indefinido"
                     ? "Indefinido"
-                    : `${goal.duracionValor} ${goal.duracionUnidad}`}
+                    : `${goal.duracionValor} ${cap(goal.duracionUnidad)}`}
             </td>
 
-            {/* ─── objetivo ─── */}
-            <td className="goal-cell">
-                {goal.tipo === "Bool"
-                    ? "Boolean"
-                    : `${goal.valorObjetivo ?? "…"} ${goal.unidad ?? ""}`}
-            </td>
+            <td className="goal-cell">{objectiveLabel(goal)}</td>
 
-            {/* ─── acciones / completada ─── */}
-            <td className="goal-cell" style={{ textAlign:"center" }}>
+            <td className="goal-cell" style={{ display: "flex", gap: ".4rem" }}>
                 {goal.finalizado ? (
                     <>
-                        <span style={{ color:"green", fontWeight:600 }}>COMPLETADA</span>{" "}
-                        <button
-                            onClick={(e)=>{e.stopPropagation(); handleDelete(goal._id);}}
-                        >
-                            Eliminar
-                        </button>
+                        <span style={{ color: "green", fontWeight: 600 }}>COMPLETADA</span>
+                        <button onClick={() => handleDelete(goal._id)}>Eliminar</button>
                     </>
                 ) : (
                     <>
-                        <button onClick={(e)=>e.stopPropagation()}>Entrada</button>
-                        <button onClick={(e)=>e.stopPropagation()}>Editar</button>
-                        <button
-                            onClick={(e)=>{e.stopPropagation();handleFinalize(goal._id);}}
-                        >
-                            Finalizar
+                        <button onClick={() => alert("Entrada aún no implementada")}>
+                            Entrada
                         </button>
-                        <button
-                            onClick={(e)=>{e.stopPropagation();handleDelete(goal._id);}}
-                        >
-                            Eliminar
-                        </button>
+                        <button onClick={() => handleFinalize(goal._id)}>Finalizar</button>
+                        <button onClick={() => navigate(`/edit/${goal._id}`)}>Editar</button>
+                        <button onClick={() => handleDelete(goal._id)}>Eliminar</button>
                     </>
                 )}
             </td>
         </tr>
     );
 
-    /*──────── acciones metas ────────*/
-    const handleDelete = async (id) => {
-        if (!window.confirm("¿Eliminar meta definitivamente?")) return;
-        try   { await deleteGoal(id); }
-        catch { alert("Error al eliminar meta"); return; }
-
-        setGoals((prev)=>prev.filter((m)=>m._id !== id));
-        if (selectedGoal?._id === id) setSelectedGoal(null);
-    };
-
-    const handleFinalize = async (id) => {
-        try   { await finalizeGoal(id); }
-        catch { alert("Error al finalizar meta"); return; }
-
-        setGoals((prev)=>prev.map((m)=>m._id === id ? { ...m, finalizado:true } : m));
-    };
-
-    /*──────── creación de meta ──────*/
+    /* ───── crear meta ───── */
     const handleCreateGoal = async (e) => {
         e.preventDefault();
-
-        const duracionValor  = newGoal.periodoIndef ? 1 : Number(newGoal.periodoNum || 0);
-        const duracionUnidad = newGoal.periodoIndef ? "Indefinido" : cap(newGoal.periodoUnit);
-
-        const common = {
-            nombre       : newGoal.nombre,
-            descripcion  : newGoal.descripcion,
-            fecha        : newGoal.fechaInicio,
-            duracionValor,
-            duracionUnidad,
-        };
-
         try {
             if (newGoal.tipo === "bool") {
-                await createGoalBool(common);
+                await createGoalBool({
+                    nombre: newGoal.nombre,
+                    fecha: newGoal.fechaInicio,
+                    descripcion: newGoal.descripcion,
+                    duracionValor: newGoal.periodoIndef ? -1 : Number(newGoal.periodoNum),
+                    duracionUnidad: newGoal.periodoIndef
+                        ? "Indefinido"
+                        : cap(newGoal.periodoUnit),
+                });
             } else {
                 await createGoalNum({
-                    ...common,
-                    valorObjetivo:Number(newGoal.objetivoNum || 0),
-                    unidad:newGoal.objetivoUnidad
+                    nombre: newGoal.nombre,
+                    fecha: newGoal.fechaInicio,
+                    descripcion: newGoal.descripcion,
+                    valorObjetivo: Number(newGoal.objetivoNum),
+                    unidad: newGoal.objetivoUnidad,
+                    duracionValor: newGoal.periodoIndef ? -1 : Number(newGoal.periodoNum),
+                    duracionUnidad: newGoal.periodoIndef
+                        ? "Indefinido"
+                        : cap(newGoal.periodoUnit),
                 });
             }
-
-            /* recarga metas + stats */
-            const { data } = await getProfile();
-            const metasDet = await Promise.all(
-                data.metas.map(async (m) => {
-                    if (m.tipo === "Num") {
-                        try {
-                            const { data: det } = await getGoalById(m._id);
-                            return { ...m, valorObjetivo:det.valorObjetivo, unidad:det.unidad };
-                        } catch {}
-                    }
-                    return m;
-                })
-            );
-            setGoals(metasDet);
-            setStats(data.estadisticas);
             setOpenNew(false);
-            resetForm();
+            setNewGoal(emptyGoal);
+            await loadData();
         } catch (err) {
-            console.error(err.response?.data || err);
-            alert("Error al crear la meta");
+            console.error(err);
+            alert("No se pudo crear la meta.");
         }
     };
 
-    /*── estilos atenuados (indefinido / boolean) ─*/
-    const faded = { opacity:0.3, pointerEvents:"none" };
+    /* ───── loader ───── */
+    if (loading) return <p className="dashboard-loading">Cargando…</p>;
 
-    /*──────── vista cargando ────────*/
-    if (loading) return <p style={{ padding:"1.5rem" }}>Cargando…</p>;
-
-    /*──────────────── render ────────*/
+    /* ───── render ───── */
     return (
-        <div style={{ padding:"1rem" }}>
-            {/* ─── encabezado ─── */}
-            <header style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <h1 style={{ fontSize:"1.8rem" }}>Hola, {profile?.nombre ?? profile?.name}</h1>
-                <div style={{ display:"flex", gap:"1rem", alignItems:"center" }}>
-                    <button onClick={()=>setOpenNew(true)}>Crear meta</button>
-                    <button
-                        onClick={()=>navigate("/profile")}
-                        style={{ width:40, height:40, borderRadius:"50%", overflow:"hidden", border:"1px solid #ccc" }}
-                    >
+        <div className="dashboard-wrapper">
+            {/* header */}
+            <header className="dashboard-header">
+                <h1 className="dashboard-title">Hola, {profile?.nombre}</h1>
+
+                <div className="dashboard-header-right">
+                    <button className="create-goal-btn" onClick={() => setOpenNew(true)}>
+                        Crear meta
+                    </button>
+
+                    <button className="avatar-btn" onClick={() => navigate("/profile")}>
                         <img
+                            className="avatar-img"
                             src={user?.photoURL || "/default-avatar.svg"}
                             alt="perfil"
-                            style={{ width:"100%", height:"100%", objectFit:"cover" }}
                         />
                     </button>
                 </div>
             </header>
 
-            {/* ─── modal Crear meta ─── */}
+            {/* modal crear meta */}
             {openNew && (
                 <div className="modal-overlay">
                     <div className="modal">
-                        <form onSubmit={handleCreateGoal}>
+                        <h2>Nueva meta</h2>
 
+                        <form onSubmit={handleCreateGoal}>
                             {/* Nombre */}
-                            <label>Nombre*:
+                            <label>
+                                Nombre*:
                                 <input
                                     required
                                     value={newGoal.nombre}
-                                    onChange={(e)=>setNewGoal({ ...newGoal, nombre:e.target.value })}
+                                    onChange={(e) =>
+                                        setNewGoal({ ...newGoal, nombre: e.target.value })
+                                    }
                                 />
                             </label>
 
                             {/* Periodo */}
-                            <label>Periodo*:
-                                <div style={{ display:"flex", gap:"0.5rem", alignItems:"center" }}>
+                            <label>
+                                Periodo*:
+                                <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
                                     <input
                                         type="number"
                                         required={!newGoal.periodoIndef}
                                         disabled={newGoal.periodoIndef}
-                                        style={{ width:"4rem", ...(newGoal.periodoIndef ? faded : {}) }}
+                                        className="short"
                                         value={newGoal.periodoNum}
-                                        onChange={(e)=>setNewGoal({ ...newGoal, periodoNum:e.target.value })}
+                                        onChange={(e) =>
+                                            setNewGoal({ ...newGoal, periodoNum: e.target.value })
+                                        }
                                     />
                                     <select
                                         disabled={newGoal.periodoIndef}
-                                        style={newGoal.periodoIndef ? faded : {}}
                                         value={newGoal.periodoUnit}
-                                        onChange={(e)=>setNewGoal({ ...newGoal, periodoUnit:e.target.value })}
+                                        onChange={(e) =>
+                                            setNewGoal({ ...newGoal, periodoUnit: e.target.value })
+                                        }
                                     >
                                         <option value="dias">Días</option>
                                         <option value="semanas">Semanas</option>
                                         <option value="meses">Meses</option>
                                         <option value="años">Años</option>
                                     </select>
-                                    <label style={{ display:"flex", gap:"0.3rem" }}>
+                                    <label style={{ display: "flex", gap: ".3rem" }}>
                                         <input
                                             type="checkbox"
                                             checked={newGoal.periodoIndef}
-                                            onChange={(e)=>setNewGoal({ ...newGoal, periodoIndef:e.target.checked })}
+                                            onChange={(e) =>
+                                                setNewGoal({ ...newGoal, periodoIndef: e.target.checked })
+                                            }
                                         />
                                         Indefinido
                                     </label>
@@ -269,30 +263,48 @@ export default function Dashboard() {
                             </label>
 
                             {/* Objetivo */}
-                            <label>Objetivo*:
-                                <div style={{ display:"flex", gap:"0.5rem", alignItems:"center" }}>
+                            <label>
+                                Objetivo*:
+                                <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
                                     <input
                                         type="number"
                                         required={newGoal.tipo === "num"}
                                         disabled={newGoal.tipo !== "num"}
-                                        style={{ width:"6rem", ...(newGoal.tipo !== "num" ? faded : {}) }}
+                                        className="short"
                                         value={newGoal.objetivoNum}
-                                        onChange={(e)=>setNewGoal({ ...newGoal, objetivoNum:e.target.value, tipo:"num" })}
+                                        onChange={(e) =>
+                                            setNewGoal({
+                                                ...newGoal,
+                                                objetivoNum: e.target.value,
+                                                tipo: "num",
+                                            })
+                                        }
                                     />
                                     <input
                                         type="text"
                                         required={newGoal.tipo === "num"}
                                         disabled={newGoal.tipo !== "num"}
-                                        style={{ width:"7rem", ...(newGoal.tipo !== "num" ? faded : {}) }}
+                                        className="medium"
                                         placeholder="unidad"
                                         value={newGoal.objetivoUnidad}
-                                        onChange={(e)=>setNewGoal({ ...newGoal, objetivoUnidad:e.target.value, tipo:"num" })}
+                                        onChange={(e) =>
+                                            setNewGoal({
+                                                ...newGoal,
+                                                objetivoUnidad: e.target.value,
+                                                tipo: "num",
+                                            })
+                                        }
                                     />
-                                    <label style={{ display:"flex", gap:"0.3rem" }}>
+                                    <label style={{ display: "flex", gap: ".3rem" }}>
                                         <input
                                             type="checkbox"
                                             checked={newGoal.tipo === "bool"}
-                                            onChange={(e)=>setNewGoal({ ...newGoal, tipo:e.target.checked ? "bool" : "num" })}
+                                            onChange={(e) =>
+                                                setNewGoal({
+                                                    ...newGoal,
+                                                    tipo: e.target.checked ? "bool" : "num",
+                                                })
+                                            }
                                         />
                                         Boolean
                                     </label>
@@ -300,26 +312,39 @@ export default function Dashboard() {
                             </label>
 
                             {/* Fecha */}
-                            <label>Fecha inicio:
+                            <label className="fecha-wrapper">
+                                Fecha inicio:
                                 <input
                                     type="date"
+                                    className="fecha-input"
                                     value={newGoal.fechaInicio}
-                                    onChange={(e)=>setNewGoal({ ...newGoal, fechaInicio:e.target.value })}
+                                    onChange={(e) =>
+                                        setNewGoal({ ...newGoal, fechaInicio: e.target.value })
+                                    }
                                 />
                             </label>
 
                             {/* Descripción */}
-                            <label>Descripción:
+                            <label>
+                                Descripción:
                                 <textarea
                                     rows={3}
                                     value={newGoal.descripcion}
-                                    onChange={(e)=>setNewGoal({ ...newGoal, descripcion:e.target.value })}
+                                    onChange={(e) =>
+                                        setNewGoal({ ...newGoal, descripcion: e.target.value })
+                                    }
                                 />
                             </label>
 
                             {/* acciones */}
-                            <div style={{ marginTop:"1rem", display:"flex", gap:"1rem" }}>
-                                <button type="button" onClick={()=>{ setOpenNew(false); resetForm(); }}>
+                            <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpenNew(false);
+                                        setNewGoal(emptyGoal);
+                                    }}
+                                >
                                     Cancelar
                                 </button>
                                 <button type="submit">Crear</button>
@@ -329,25 +354,28 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* ─── tabla ─── */}
-            <main style={{ marginTop:"2rem" }}>
-                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+            {/* tabla de metas */}
+            <main className="goals-table-wrapper">
+                <table className="goals-table">
                     <thead>
-                    <tr><th>Nombre</th><th>Periodo</th><th>Objetivo</th><th>Acciones</th></tr>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Periodo</th>
+                        <th>Objetivo</th>
+                        <th>Acciones</th>
+                    </tr>
                     </thead>
-                    <tbody>
-                    {goals.map((g)=><GoalRow key={g._id} goal={g} />)}
-                    </tbody>
+                    <tbody>{goals.map((g) => <GoalRow key={g._id} goal={g} />)}</tbody>
                 </table>
 
-                {/* detalle */}
                 {selectedGoal && (
-                    <div style={{ display:"flex", gap:"2rem", marginTop:"1.5rem" }}>
-                        <div style={{ flex:1 }}>
+                    <div className="goal-detail">
+                        <div className="goal-registros">
                             <h3>Registros</h3>
                             <div className="registros-placeholder">Próximamente…</div>
                         </div>
-                        <div style={{ flex:1 }}>
+
+                        <div className="goal-descripcion">
                             <h3>Descripción</h3>
                             <p>{selectedGoal.descripcion || "Sin descripción."}</p>
                         </div>
@@ -355,14 +383,22 @@ export default function Dashboard() {
                 )}
             </main>
 
-            {/* ─── estadísticas ─── */}
-            <section style={{ marginTop:"3rem" }}>
-                <h2>Estadísticas del usuario</h2>
-                <ul>
-                    <li>Metas activas: {stats ? stats.totalMetas - stats.totalMetasFinalizadas : "-"}</li>
-                    <li>Metas finalizadas: {stats?.totalMetasFinalizadas ?? "-"}</li>
-                    <li>Porcentaje finalizadas: {stats?.porcentajeFinalizadas ?? "-"}%</li>
-                </ul>
+            {/* estadísticas */}
+            <section className="user-stats">
+                <h2 style={{ margin: "0 0 1rem 0", padding: "1rem" }}>
+                    Estadísticas del usuario
+                </h2>
+                {stats ? (
+                    <ul style={{ listStyle: "none", padding: "0 1.5rem 1.5rem 1.5rem" }}>
+                        <li>
+                            Metas activas: {stats.totalMetas - stats.totalMetasFinalizadas}
+                        </li>
+                        <li>Metas finalizadas: {stats.totalMetasFinalizadas}</li>
+                        <li>Porcentaje finalizadas: {stats.porcentajeFinalizadas}%</li>
+                    </ul>
+                ) : (
+                    <p style={{ padding: "0 1.5rem 1.5rem 1.5rem" }}>—</p>
+                )}
             </section>
         </div>
     );
