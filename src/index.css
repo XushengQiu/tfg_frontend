@@ -275,3 +275,46 @@ code {
   color: #666;
   font-size: 0.9rem;
 }
+
+.login-legal {
+  margin-top: auto;
+  padding: 1rem 0 2rem;
+  font-size: 0.85rem;
+  color: #666;
+  text-align: center;
+}
+.login-legal a {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Asegura posicionamiento relativo del contenedor del modal */
+.modal { position: relative; }
+
+/* Botón “X” de cierre arriba a la derecha */
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.modal-close:hover { opacity: 1; }
+
+.linklike {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  color: #1a73e8;
+}
+.linklike:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}

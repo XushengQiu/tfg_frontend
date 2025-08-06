@@ -1,26 +1,30 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Dashboard.jsx
 // ───────────────────────────────────────────────────────────────
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth-context";
 
 import {
+    /* lecturas */
     getProfile,
     getGoalById,
+    /* metas */
     createGoalBool,
     createGoalNum,
     updateGoalBool,
     updateGoalNum,
+    finalizeGoal,
+    deleteGoal,
+    /* registros */
     createRecordBool,
     createRecordNum,
     deleteRecord,
-    deleteGoal,
-    finalizeGoal,
 } from "../services/api";
 
 import "../index.css";
 
+/* helpers ----------------------------------------------------- */
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 const fmtFecha = (iso) =>
     new Date(iso).toLocaleDateString("es-ES", {
@@ -30,17 +34,18 @@ const fmtFecha = (iso) =>
         year: "numeric",
     });
 
+/* ------------------------------------------------------------- */
 export default function Dashboard() {
     const { user, profile } = useAuth();
     const navigate = useNavigate();
 
-    /* ───── estado global ───── */
-    const [goals, setGoals] = useState([]);
-    const [stats, setStats] = useState(null);
+    /* estado ---------------------------------------------------- */
+    const [goals,   setGoals]   = useState([]);
+    const [stats,   setStats]   = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedGoal, setSelectedGoal] = useState(null);
 
-    /* ---------- ventana “Nueva meta” ---------- */
+    /* modal Nueva meta */
     const [openNew, setOpenNew] = useState(false);
     const emptyGoal = {
         nombre: "",
@@ -55,7 +60,7 @@ export default function Dashboard() {
     };
     const [newGoal, setNewGoal] = useState(emptyGoal);
 
-    /* ---------- ventana “Entrada / Registro” ---------- */
+    /* modal Entrada */
     const [entryGoal, setEntryGoal] = useState(null);
     const todayISO = new Date().toISOString().substring(0, 10);
     const [entryData, setEntryData] = useState({
@@ -64,7 +69,7 @@ export default function Dashboard() {
         valorNum: "",
     });
 
-    /* ---------- ventana “Editar meta” ---------- */
+    /* modal Editar */
     const [editGoal, setEditGoal] = useState(null);
     const [editForm, setEditForm] = useState({
         nombre: "",
@@ -76,105 +81,216 @@ export default function Dashboard() {
         objetivoUnidad: "",
     });
 
-    /* ───── cargar / refrescar ───── */
-    const loadData = async () => {
+    /* helpers de estado ---------------------------------------- */
+    const upsertGoal = useCallback(
+        (meta) => {
+            if (!meta) return;
+            setGoals((curr) => {
+                const i = curr.findIndex((g) => g._id === meta._id);
+                if (i === -1) return [...curr, meta];
+                const copy = [...curr];
+                copy[i] = meta;
+                return copy;
+            });
+        },
+        []
+    );
+
+    const removeGoal = useCallback(
+        (id) => setGoals((curr) => curr.filter((g) => g._id !== id)),
+        []
+    );
+
+    const syncSelected = useCallback(
+        (idOrMeta) =>
+            setSelectedGoal((sel) => {
+                if (!sel) return sel;
+                const id = typeof idOrMeta === "string" ? idOrMeta : idOrMeta._id;
+                if (sel._id !== id) return sel;
+                return typeof idOrMeta === "object" ? idOrMeta : null;
+            }),
+        []
+    );
+
+    /* carga inicial (una petición) ------------------------------ */
+    const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            const { data } = await getProfile();
-            const metas = await Promise.all(
-                data.metas.map(async (m) => {
-                    try {
-                        const { data: det } = await getGoalById(m._id);
-                        return { ...m, ...det };
-                    } catch {
-                        return m;
+            const { data } = await getProfile(); // devuelve metas “básicas”
+            let metas = data.metas;
+
+            /* ⇣ si alguna meta Num no trae valorObjetivo/unidad los completamos */
+            const metasConDetalle = await Promise.all(
+                metas.map(async (m) => {
+                    if (
+                        m.tipo === "Num" &&
+                        (m.valorObjetivo === undefined || m.unidad === undefined)
+                    ) {
+                        try {
+                            const { data: det } = await getGoalById(m._id);
+                            return { ...m, valorObjetivo: det.valorObjetivo, unidad: det.unidad };
+                        } catch {
+                            return m; // si falla la petición dejamos la meta tal cual
+                        }
                     }
+                    return m;
                 })
             );
-            setGoals(metas);
+
+            setGoals(metasConDetalle);
             setStats(data.estadisticas);
-            if (selectedGoal) {
-                setSelectedGoal(metas.find((g) => g._id === selectedGoal._id) || null);
-            }
         } catch (err) {
             console.error(err);
             alert("No se pudieron cargar los datos.");
         } finally {
             setLoading(false);
         }
-    };
-    useEffect(() => {
-        loadData();
     }, []);
 
-    /* ───── helpers ───── */
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    /* si al seleccionar falta la lista de registros → fetch ----- */
+    const ensureGoalDetail = useCallback(
+        async (goal) => {
+            if (goal.registros !== undefined) return; // ya los tenemos
+            try {
+                const { data } = await getGoalById(goal._id);
+                upsertGoal(data);
+                syncSelected(data);
+            } catch { /* ignorar */ }
+        },
+        [upsertGoal, syncSelected]
+    );
+
+    /* etiquetas ------------------------------------------------- */
     const objectiveLabel = (g) =>
         g.tipo === "Bool"
             ? "Boolean"
             : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
 
-    const handleSelectGoal = (g) =>
+    /* seleccionar fila ----------------------------------------- */
+    const handleSelectGoal = (g) => {
         setSelectedGoal((cur) => (cur?._id === g._id ? null : g));
+        ensureGoalDetail(g);
+    };
 
+    /* crear meta ------------------------------------------------ */
+    const handleCreateGoal = async (e) => {
+        e.preventDefault();
+        const duracionValor  = newGoal.periodoIndef ? 1 : Number(newGoal.periodoNum);
+        const duracionUnidad = newGoal.periodoIndef
+            ? "Indefinido"
+            : cap(newGoal.periodoUnit);
+
+        try {
+            const res =
+                newGoal.tipo === "bool"
+                    ? await createGoalBool({
+                        nombre: newGoal.nombre,
+                        descripcion: newGoal.descripcion,
+                        fecha: newGoal.fechaInicio,
+                        duracionValor,
+                        duracionUnidad,
+                    })
+                    : await createGoalNum({
+                        nombre: newGoal.nombre,
+                        descripcion: newGoal.descripcion,
+                        fecha: newGoal.fechaInicio,
+                        duracionValor,
+                        duracionUnidad,
+                        valorObjetivo: Number(newGoal.objetivoNum),
+                        unidad: newGoal.objetivoUnidad,
+                    });
+
+            upsertGoal(res.data?.meta);
+            if (res.data?.estadisticasUsuario)
+                setStats(res.data.estadisticasUsuario);
+
+            setOpenNew(false);
+            setNewGoal(emptyGoal);
+        } catch {
+            alert("No se pudo crear la meta.");
+        }
+    };
+
+    /* finalizar meta ------------------------------------------- */
     const handleFinalize = async (id) => {
         if (!window.confirm("¿Marcar esta meta como COMPLETADA?")) return;
         try {
-            await finalizeGoal(id);
-            await loadData();
+            const { data } = await finalizeGoal(id);
+            upsertGoal(data?.meta);
+            if (data?.estadisticasUsuario) setStats(data.estadisticasUsuario);
+            if (!data?.meta) await loadData();      // fallback raro
+            syncSelected(data?.meta ?? id);
         } catch {
             alert("No se pudo finalizar la meta.");
         }
     };
 
+    /* eliminar meta -------------------------------------------- */
     const handleDelete = async (id) => {
         if (!window.confirm("¿Eliminar esta meta?")) return;
         try {
-            await deleteGoal(id);
-            await loadData();
+            const { data } = await deleteGoal(id); // 200 + nuevas stats
+            removeGoal(id);
+            if (data?.estadisticasUsuario) setStats(data.estadisticasUsuario);
+            syncSelected(id);
         } catch {
             alert("No se pudo eliminar la meta.");
         }
     };
 
+    /* eliminar registro ---------------------------------------- */
     const handleDeleteRecord = async (goalId, fechaISO) => {
         if (!window.confirm("¿Eliminar este registro?")) return;
         try {
             await deleteRecord(goalId, fechaISO);
-            await loadData();
+            setGoals((curr) =>
+                curr.map((g) =>
+                    g._id === goalId
+                        ? { ...g, registros: g.registros.filter((r) => r.fecha !== fechaISO) }
+                        : g
+                )
+            );
+            syncSelected(goalId);
         } catch {
             alert("No se pudo eliminar el registro.");
         }
     };
 
-    /* ───── guardar registro ───── */
+    /* guardar registro ----------------------------------------- */
     const handleSaveEntry = async (e) => {
         e.preventDefault();
         if (!entryGoal) return;
+
         try {
-            if (entryGoal.tipo === "Bool") {
-                if (entryData.valorBool === null)
-                    return alert("Selecciona True o False");
-                await createRecordBool(entryGoal._id, {
-                    fecha: entryData.fecha,
-                    valorBool: entryData.valorBool,
-                });
-            } else {
-                if (entryData.valorNum === "")
-                    return alert("Introduce un valor numérico");
-                await createRecordNum(entryGoal._id, {
-                    fecha: entryData.fecha,
-                    valorNum: Number(entryData.valorNum),
-                });
-            }
+            const res =
+                entryGoal.tipo === "Bool"
+                    ? await createRecordBool(entryGoal._id, {
+                        fecha: entryData.fecha,
+                        valorBool: entryData.valorBool,
+                    })
+                    : await createRecordNum(entryGoal._id, {
+                        fecha: entryData.fecha,
+                        valorNum: Number(entryData.valorNum),
+                    });
+
+            upsertGoal(res.data?.meta);
+            if (res.data?.estadisticasUsuario)
+                setStats(res.data.estadisticasUsuario);
+            if (!res.data?.meta) await loadData();
+            syncSelected(res.data?.meta ?? entryGoal._id);
+
             setEntryGoal(null);
             setEntryData({ fecha: todayISO, valorBool: null, valorNum: "" });
-            await loadData();
         } catch {
             alert("No se pudo guardar el registro.");
         }
     };
 
-    /* ───── abrir modal editar ───── */
+    /* abrir modal editar --------------------------------------- */
     const openEditModal = (g) => {
         setEditGoal(g);
         setEditForm({
@@ -191,31 +307,29 @@ export default function Dashboard() {
         });
     };
 
-    /* ───── guardar edición ───── */
+    /* guardar edición ----------------------------------------- */
     const handleSaveEdit = async (e) => {
         e.preventDefault();
         if (!editGoal) return;
 
         const body = {};
-        /* nombre y descripción */
         if (editForm.nombre.trim() && editForm.nombre !== editGoal.nombre)
             body.nombre = editForm.nombre.trim();
         if (editForm.descripcion.trim() !== (editGoal.descripcion ?? ""))
             body.descripcion = editForm.descripcion.trim();
 
-        /* duración */
         const newIndef = editForm.periodoIndef;
-        const newVal = newIndef ? 1 : Number(editForm.periodoNum);
-        const newUnit = newIndef ? "Indefinido" : cap(editForm.periodoUnit);
+        const newVal   = newIndef ? 1 : Number(editForm.periodoNum);
+        const newUnit  = newIndef ? "Indefinido" : cap(editForm.periodoUnit);
+
         if (
             newUnit !== editGoal.duracionUnidad ||
-            newVal !== editGoal.duracionValor
+            newVal  !== editGoal.duracionValor
         ) {
-            body.duracionValor = newVal;
+            body.duracionValor  = newVal;
             body.duracionUnidad = newUnit;
         }
 
-        /* num-specific */
         if (editGoal.tipo === "Num") {
             const valObj = Number(editForm.objetivoNum);
             if (!Number.isNaN(valObj) && valObj !== editGoal.valorObjetivo)
@@ -227,59 +341,27 @@ export default function Dashboard() {
                 body.unidad = editForm.objetivoUnidad.trim();
         }
 
-        if (Object.keys(body).length === 0) {
-            setEditGoal(null);
-            return;
-        }
+        if (Object.keys(body).length === 0) return setEditGoal(null);
 
         try {
-            if (editGoal.tipo === "Bool")
-                await updateGoalBool(editGoal._id, body);
-            else await updateGoalNum(editGoal._id, body);
+            const res =
+                editGoal.tipo === "Bool"
+                    ? await updateGoalBool(editGoal._id, body)
+                    : await updateGoalNum(editGoal._id, body);
+
+            upsertGoal(res.data?.meta);
+            if (res.data?.estadisticasUsuario)
+                setStats(res.data.estadisticasUsuario);
+            if (!res.data?.meta) await loadData();
+            syncSelected(res.data?.meta ?? editGoal._id);
+
             setEditGoal(null);
-            await loadData();
         } catch {
             alert("No se pudo actualizar la meta.");
         }
     };
 
-    /* ───── crear meta ───── */
-    const handleCreateGoal = async (e) => {
-        e.preventDefault();
-        const duracionValor = newGoal.periodoIndef ? 1 : Number(newGoal.periodoNum);
-        const duracionUnidad = newGoal.periodoIndef
-            ? "Indefinido"
-            : cap(newGoal.periodoUnit);
-
-        try {
-            if (newGoal.tipo === "bool") {
-                await createGoalBool({
-                    nombre: newGoal.nombre,
-                    descripcion: newGoal.descripcion,
-                    fecha: newGoal.fechaInicio,
-                    duracionValor,
-                    duracionUnidad,
-                });
-            } else {
-                await createGoalNum({
-                    nombre: newGoal.nombre,
-                    descripcion: newGoal.descripcion,
-                    fecha: newGoal.fechaInicio,
-                    duracionValor,
-                    duracionUnidad,
-                    valorObjetivo: Number(newGoal.objetivoNum),
-                    unidad: newGoal.objetivoUnidad,
-                });
-            }
-            setOpenNew(false);
-            setNewGoal(emptyGoal);
-            await loadData();
-        } catch {
-            alert("No se pudo crear la meta.");
-        }
-    };
-
-    /* ───── fila de la tabla ───── */
+    /* fila de la tabla ---------------------------------------- */
     const GoalRow = ({ goal }) => (
         <tr
             className={`goal-row ${goal.finalizado ? "goal-row-finalizada" : ""}`}
@@ -348,7 +430,7 @@ export default function Dashboard() {
         </tr>
     );
 
-    /* ───── render ───── */
+    /* render --------------------------------------------------- */
     if (loading) return <p className="dashboard-loading">Cargando…</p>;
 
     return (
@@ -376,6 +458,7 @@ export default function Dashboard() {
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <h2>Nueva meta</h2>
 
+                        {/* formulario NUEVA META */}
                         <form onSubmit={handleCreateGoal}>
                             {/* Nombre */}
                             <label>
@@ -539,7 +622,6 @@ export default function Dashboard() {
             {entryGoal && (
                 <div className="modal-overlay" onClick={() => setEntryGoal(null)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        {/* cabecera */}
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <h2 style={{ margin: 0 }}>{entryGoal.nombre}</h2>
                             <span style={{ fontWeight: 600 }}>
@@ -551,7 +633,6 @@ export default function Dashboard() {
               </span>
                         </div>
 
-                        {/* objetivo (solo Num) */}
                         {entryGoal.tipo === "Num" && (
                             <p style={{ textAlign: "center", margin: "0.5rem 0 1rem 0" }}>
                                 Objetivo:{" "}
@@ -561,18 +642,12 @@ export default function Dashboard() {
                             </p>
                         )}
 
-                        {/* formulario */}
                         <form onSubmit={handleSaveEntry}>
-                            {/* valor */}
                             {entryGoal.tipo === "Bool" ? (
                                 <label style={{ display: "block", marginBottom: "1rem" }}>
                                     Valor*:
                                     <div
-                                        style={{
-                                            display: "flex",
-                                            gap: "1rem",
-                                            marginTop: ".4rem",
-                                        }}
+                                        style={{ display: "flex", gap: "1rem", marginTop: ".4rem" }}
                                     >
                                         <label>
                                             <input
@@ -615,10 +690,7 @@ export default function Dashboard() {
                                             className="short"
                                             value={entryData.valorNum}
                                             onChange={(e) =>
-                                                setEntryData({
-                                                    ...entryData,
-                                                    valorNum: e.target.value,
-                                                })
+                                                setEntryData({ ...entryData, valorNum: e.target.value })
                                             }
                                         />
                                         <span>{entryGoal.unidad}</span>
@@ -626,7 +698,6 @@ export default function Dashboard() {
                                 </label>
                             )}
 
-                            {/* fecha */}
                             <label style={{ display: "block", marginBottom: "1rem" }}>
                                 Fecha:
                                 <input
@@ -639,7 +710,6 @@ export default function Dashboard() {
                                 />
                             </label>
 
-                            {/* acciones */}
                             <div style={{ display: "flex", gap: "1rem" }}>
                                 <button type="button" onClick={() => setEntryGoal(null)}>
                                     Cancelar
@@ -656,8 +726,8 @@ export default function Dashboard() {
                 <div className="modal-overlay" onClick={() => setEditGoal(null)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <h3>Editar meta ({editGoal.tipo})</h3>
+
                         <form onSubmit={handleSaveEdit}>
-                            {/* nombre y descripción */}
                             <label>
                                 Nombre:
                                 <input
@@ -680,7 +750,6 @@ export default function Dashboard() {
                                 />
                             </label>
 
-                            {/* duración */}
                             <label>
                                 Duración:
                                 <div
@@ -728,14 +797,13 @@ export default function Dashboard() {
                                 </div>
                             </label>
 
-                            {/* num específico */}
                             {editGoal.tipo === "Num" && (
                                 <>
                                     <label>
                                         Valor objetivo:
                                         <input
                                             type="number"
-                                            step="0.01"
+                                            step="1"
                                             min="0"
                                             value={editForm.objetivoNum}
                                             onChange={(e) =>
@@ -763,7 +831,6 @@ export default function Dashboard() {
                                 </>
                             )}
 
-                            {/* acciones */}
                             <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
                                 <button type="button" onClick={() => setEditGoal(null)}>
                                     Cancelar
@@ -775,7 +842,7 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* ---------- TABLA Y DETALLE ---------- */}
+            {/* ---------- TABLA + DETALLE ---------- */}
             <main className="goals-table-wrapper">
                 <table className="goals-table">
                     <thead>
@@ -791,6 +858,7 @@ export default function Dashboard() {
 
                 {selectedGoal && (
                     <div className="goal-detail">
+                        {/* registros */}
                         <div className="goal-registros">
                             <h3>Registros</h3>
 
@@ -818,8 +886,8 @@ export default function Dashboard() {
                                                     <td style={{ textAlign: "center" }}>
                                                         {selectedGoal.tipo === "Bool"
                                                             ? r.valorBool
-                                                                ? "True"
-                                                                : "False"
+                                                                ? "✅"
+                                                                : "❌"
                                                             : r.valorNum}
                                                     </td>
                                                     <td style={{ textAlign: "center" }}>
@@ -848,6 +916,7 @@ export default function Dashboard() {
                             )}
                         </div>
 
+                        {/* descripción */}
                         <div className="goal-descripcion">
                             <h3>Descripción</h3>
                             <p>{selectedGoal.descripcion || "Sin descripción."}</p>
@@ -882,4 +951,4 @@ export default function Dashboard() {
             </section>
         </div>
     );
-} /*SA*/
+}
