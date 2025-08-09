@@ -1,3 +1,6 @@
+// ───────────────────────────────────────────────────────────────
+// src/pages/Onboarding.jsx
+// ───────────────────────────────────────────────────────────────
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUser } from '../services/api';
@@ -5,9 +8,32 @@ import Modal from '../components/Modal';
 import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
 
+/* Helper para mostrar "Error <status>: <mensaje>" desde el backend */
+const apiError = (err, fallback) => {
+    const res = err?.response;
+    const status = res?.status;
+    const data = res?.data;
+
+    let msg =
+        (typeof data === "string" && data) ||
+        data?.message ||
+        data?.error ||
+        (Array.isArray(data?.errors) &&
+            (typeof data.errors[0] === "string"
+                ? data.errors[0]
+                : data.errors[0]?.msg || data.errors[0]?.message)) ||
+        res?.statusText ||
+        err?.message ||
+        fallback;
+
+    return status
+        ? `Error ${status}: ${msg || fallback || "Solicitud fallida"}`
+        : msg || fallback || "Se produjo un error.";
+};
+
 export default function Onboarding() {
     const [name, setName] = useState('');
-    const [surname, setSurname] = useState('');
+    const [surname, setSurname] = useState(''); // opcional
     const [loading, setLoading] = useState(false);
 
     // cadena de modales
@@ -36,13 +62,17 @@ export default function Onboarding() {
         setShowData(false);
         setLoading(true);
         try {
-            // Ajusta el payload a tu API si usa otros nombres de campos
-            await createUser({ nombre: name, apellidos: surname });
+            // apellidos opcional: si viene vacío, mandamos ""
+            const payload = {
+                nombre: name.trim(),
+                apellidos: (surname || '').trim(), // "" si no hay apellidos
+            };
+
+            await createUser(payload);
             navigate('/dashboard', { replace: true });
         } catch (err) {
-            console.error(err);
-            alert('No se pudo crear el usuario. Inténtalo más tarde.');
-            navigate('/login', { replace: true });
+            alert(apiError(err, "No se pudo crear el usuario."));
+            navigate('/login', { replace: true }); // se mantiene tu flujo actual
         } finally {
             setLoading(false);
         }
@@ -58,14 +88,22 @@ export default function Onboarding() {
 
                 <label>
                     Nombre:&nbsp;
-                    <input value={name} onChange={(e) => setName(e.target.value)} required />
+                    <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                    />
                 </label>
 
                 &nbsp;&nbsp;
 
                 <label>
-                    Apellidos:&nbsp;
-                    <input value={surname} onChange={(e) => setSurname(e.target.value)} required />
+                    Apellidos (opcional):&nbsp;
+                    <input
+                        value={surname}
+                        onChange={(e) => setSurname(e.target.value)}
+                        placeholder="(opcional)"
+                    />
                 </label>
 
                 &nbsp;&nbsp;
