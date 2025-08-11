@@ -1,77 +1,115 @@
-import { useState, useEffect } from "react";
-import "../index.css";
+// src/components/NewGoalModal.jsx
+import React, { useEffect, useState } from "react";
 
-// helpers estables fuera del componente
-const getTodayISO = () => new Date().toISOString().substring(0, 10);
-const getEmpty = () => ({
-    nombre: "",
-    periodoIndef: false,
-    periodoNum: "",
-    periodoUnit: "dias", // dias | semanas | meses | años
-    tipo: "num",         // 'num' | 'bool'
-    objetivoNum: "",
-    objetivoUnidad: "",
-    descripcion: "",
-    fechaInicio: getTodayISO(),
-});
+const todayISO = () => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 export default function NewGoalModal({ open, onClose, onCreate }) {
-    const [form, setForm] = useState(getEmpty());
+    const [nombre, setNombre] = useState("");
+    const [periodoNum, setPeriodoNum] = useState("");
+    const [periodoUnit, setPeriodoUnit] = useState("dias");
+    const [periodoIndef, setPeriodoIndef] = useState(false);
 
+    const [objetivoNum, setObjetivoNum] = useState("");
+    const [objetivoUnidad, setObjetivoUnidad] = useState("");
+    const [isBool, setIsBool] = useState(false);
+
+    // ← fecha por defecto: HOY
+    const [fechaInicio, setFechaInicio] = useState(todayISO());
+
+    const [descripcion, setDescripcion] = useState("");
+
+    // Resetear al cerrar, dejando fecha en HOY
     useEffect(() => {
-        if (!open) setForm(getEmpty()); // resetea al cerrar
+        if (!open) {
+            setNombre("");
+            setPeriodoNum("");
+            setPeriodoUnit("dias");
+            setPeriodoIndef(false);
+            setObjetivoNum("");
+            setObjetivoUnidad("");
+            setIsBool(false);
+            setFechaInicio(todayISO()); // ← vuelve a hoy cuando se cierra
+            setDescripcion("");
+        }
     }, [open]);
 
-    if (!open) return null;
+    const canSubmit =
+        nombre.trim().length > 0 &&
+        fechaInicio && // ya viene con hoy por defecto
+        (periodoIndef || (!!periodoNum && Number(periodoNum) > 0)) &&
+        (isBool || (!!objetivoNum && Number(objetivoNum) > 0 && objetivoUnidad.trim().length > 0));
 
-    const submit = (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        onCreate(form);
+        if (!canSubmit) return;
+
+        onCreate({
+            tipo: isBool ? "bool" : "num",
+            nombre: nombre.trim(),
+            descripcion: descripcion.trim(),
+            fechaInicio,
+            periodoIndef,
+            periodoNum,
+            periodoUnit,
+            objetivoNum,
+            objetivoUnidad: objetivoUnidad.trim(),
+        });
     };
+
+    if (!open) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <h2>Nueva meta</h2>
+                <button className="modal-close" aria-label="Cerrar" onClick={onClose}>×</button>
 
-                <form onSubmit={submit}>
+                <h2 style={{ textAlign: "center", marginTop: 0 }}>Nueva meta</h2>
+
+                <form onSubmit={handleSubmit}>
                     {/* Nombre */}
                     <label>
                         Nombre*:
                         <input
+                            type="text"
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
                             required
-                            value={form.nombre}
-                            onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                         />
                     </label>
 
                     {/* Periodo */}
                     <label>
                         Periodo*:
-                        <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                        <div className={`field-group ${periodoIndef ? "group-disabled" : ""}`}>
                             <input
-                                type="number"
-                                required={!form.periodoIndef}
-                                disabled={form.periodoIndef}
                                 className="short"
-                                value={form.periodoNum}
-                                onChange={(e) => setForm({ ...form, periodoNum: e.target.value })}
+                                type="number"
+                                min="1"
+                                value={periodoNum}
+                                onChange={(e) => setPeriodoNum(e.target.value)}
+                                disabled={periodoIndef}
                             />
                             <select
-                                disabled={form.periodoIndef}
-                                value={form.periodoUnit}
-                                onChange={(e) => setForm({ ...form, periodoUnit: e.target.value })}
+                                className="medium"
+                                value={periodoUnit}
+                                onChange={(e) => setPeriodoUnit(e.target.value)}
+                                disabled={periodoIndef}
                             >
                                 <option value="dias">Días</option>
                                 <option value="semanas">Semanas</option>
                                 <option value="meses">Meses</option>
                                 <option value="años">Años</option>
                             </select>
-                            <label style={{ display: "flex", gap: ".3rem" }}>
+
+                            <label className="inline-check">
                                 <input
                                     type="checkbox"
-                                    checked={form.periodoIndef}
-                                    onChange={(e) => setForm({ ...form, periodoIndef: e.target.checked })}
+                                    checked={periodoIndef}
+                                    onChange={(e) => setPeriodoIndef(e.target.checked)}
                                 />
                                 Indefinido
                             </label>
@@ -81,49 +119,39 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     {/* Objetivo */}
                     <label>
                         Objetivo*:
-                        <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                        <div className={`field-group ${isBool ? "group-disabled" : ""}`}>
                             <input
                                 type="number"
-                                required={form.tipo === "num"}
-                                disabled={form.tipo !== "num"}
-                                className="short"
-                                value={form.objetivoNum}
-                                onChange={(e) =>
-                                    setForm({ ...form, objetivoNum: e.target.value, tipo: "num" })
-                                }
+                                value={objetivoNum}
+                                onChange={(e) => setObjetivoNum(e.target.value)}
+                                disabled={isBool}
                             />
                             <input
                                 type="text"
-                                required={form.tipo === "num"}
-                                disabled={form.tipo !== "num"}
-                                className="medium"
                                 placeholder="unidad"
-                                value={form.objetivoUnidad}
-                                onChange={(e) =>
-                                    setForm({ ...form, objetivoUnidad: e.target.value, tipo: "num" })
-                                }
+                                value={objetivoUnidad}
+                                onChange={(e) => setObjetivoUnidad(e.target.value)}
+                                disabled={isBool}
                             />
-                            <label style={{ display: "flex", gap: ".3rem" }}>
+                            <label className="inline-check">
                                 <input
                                     type="checkbox"
-                                    checked={form.tipo === "bool"}
-                                    onChange={(e) =>
-                                        setForm({ ...form, tipo: e.target.checked ? "bool" : "num" })
-                                    }
+                                    checked={isBool}
+                                    onChange={(e) => setIsBool(e.target.checked)}
                                 />
                                 Boolean
                             </label>
                         </div>
                     </label>
 
-                    {/* Fecha */}
-                    <label className="fecha-wrapper">
+                    {/* Fecha de inicio (pre-cargada a HOY) */}
+                    <label>
                         Fecha inicio:
                         <input
                             type="date"
-                            className="fecha-input"
-                            value={form.fechaInicio}
-                            onChange={(e) => setForm({ ...form, fechaInicio: e.target.value })}
+                            value={fechaInicio}
+                            onChange={(e) => setFechaInicio(e.target.value)}
+                            required
                         />
                     </label>
 
@@ -131,16 +159,15 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     <label>
                         Descripción:
                         <textarea
-                            rows={3}
-                            value={form.descripcion}
-                            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                            rows="4"
+                            value={descripcion}
+                            onChange={(e) => setDescripcion(e.target.value)}
                         />
                     </label>
 
-                    {/* Acciones */}
-                    <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
                         <button type="button" onClick={onClose}>Cancelar</button>
-                        <button type="submit">Crear</button>
+                        <button type="submit" disabled={!canSubmit}>Crear</button>
                     </div>
                 </form>
             </div>

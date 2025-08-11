@@ -4,25 +4,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
-
-import {
-    getProfile,
-    updateUser,
-    deleteAccount as deleteAPI,
-} from "../services/api";
-
+import { getProfile, updateUser, deleteAccount as deleteAPI } from "../services/api";
 import Modal from "../components/Modal";
 import TermsContent from "../components/TermsContent";
 import DataPolicyContent from "../components/DataPolicyContent";
-
 import "../index.css";
 
-/* Helper para mostrar "Error <status>: <mensaje>" desde el backend */
 const apiError = (err, fallback) => {
     const res = err?.response;
     const status = res?.status;
     const data = res?.data;
-
     let msg =
         (typeof data === "string" && data) ||
         data?.message ||
@@ -34,21 +25,15 @@ const apiError = (err, fallback) => {
         res?.statusText ||
         err?.message ||
         fallback;
-
-    return status
-        ? `Error ${status}: ${msg || fallback || "Solicitud fallida"}`
-        : msg || fallback || "Se produjo un error.";
+    return status ? `Error ${status}: ${msg || fallback || "Solicitud fallida"}` : msg || fallback || "Se produjo un error.";
 };
 
 export default function Profile() {
-    const { user, logout } = useAuth();
+    const { user, logout, profile: ctxProfile } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // datos del perfil
     const [profile, setProfile] = useState(null);
-
-    // diálogos/modales
     const [confirm, setConfirm] = useState(false);
     const [error, setError] = useState("");
     const [timer, setTimer] = useState(10);
@@ -56,22 +41,35 @@ export default function Profile() {
     const [editOpen, setEditOpen] = useState(false);
     const [form, setForm] = useState({ nombre: "", apellidos: "" });
 
-    // modales legales en Profile
     const [legalOpen, setLegalOpen] = useState(null); // 'terms' | 'data' | null
 
-    // cargar perfil una vez
+    // 1º usa snapshot que viene del Dashboard; 2º usa contexto; 3º GET si falta
     useEffect(() => {
+        let cancelled = false;
+        const snapshot = location.state?.profileSnapshot;
+
+        if (snapshot) {
+            setProfile(snapshot);
+            return;
+        }
+        if (ctxProfile) {
+            setProfile(ctxProfile);
+            return;
+        }
+
         (async () => {
             try {
                 const { data } = await getProfile();
-                setProfile(data);
+                if (!cancelled) setProfile(data);
             } catch (err) {
-                setError(apiError(err, "No se pudieron cargar los datos del perfil."));
+                if (!cancelled) setError(apiError(err, "No se pudieron cargar los datos del perfil."));
             }
         })();
-    }, []);
 
-    // cuenta atrás del diálogo de eliminar cuenta
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ctxProfile]);
+
     useEffect(() => {
         if (!confirm) { setTimer(10); return; }
         if (timer === 0) return;
@@ -79,7 +77,6 @@ export default function Profile() {
         return () => clearTimeout(id);
     }, [confirm, timer]);
 
-    // abrir modal de edición
     const openEdit = () => {
         setForm({
             nombre: profile?.nombre || "",
@@ -88,22 +85,13 @@ export default function Profile() {
         setEditOpen(true);
     };
 
-    // guardar cambios (apellidos opcional: puede ser "")
     const handleSave = async (e) => {
         e.preventDefault();
-
         const body = {};
-        if (form.nombre.trim() && form.nombre !== profile.nombre) {
-            body.nombre = form.nombre.trim();
-        }
-        if (form.apellidos !== profile.apellidos) {
-            body.apellidos = (form.apellidos ?? "").trim(); // "" válido
-        }
+        if (form.nombre.trim() && form.nombre !== profile.nombre) body.nombre = form.nombre.trim();
+        if (form.apellidos !== profile.apellidos) body.apellidos = (form.apellidos ?? "").trim();
 
-        if (Object.keys(body).length === 0) {
-            setEditOpen(false);
-            return;
-        }
+        if (Object.keys(body).length === 0) { setEditOpen(false); return; }
 
         try {
             const { data } = await updateUser(body);
@@ -115,7 +103,6 @@ export default function Profile() {
         }
     };
 
-    // eliminar cuenta
     const handleDelete = async () => {
         try {
             await deleteAPI();
@@ -128,7 +115,6 @@ export default function Profile() {
 
     return (
         <div className="profile-wrapper">
-            {/* header */}
             <header className="profile-header">
                 <h2>Mis datos</h2>
                 <button
@@ -143,41 +129,23 @@ export default function Profile() {
                 </button>
             </header>
 
-            {/* datos */}
             <main className="profile-card">
                 <p><strong>Nombre:</strong> {profile?.nombre}</p>
                 <p><strong>Apellidos:</strong> {profile?.apellidos || "—"}</p>
                 <p><strong>Email:</strong> {user?.email}</p>
             </main>
 
-            {/* acciones */}
             <footer className="profile-footer">
                 <button className="logout-btn" onClick={logout}>Cerrar sesión</button>
                 <button className="edit-btn" onClick={openEdit}>Editar datos</button>
                 <button className="delete-btn" onClick={() => setConfirm(true)}>Eliminar cuenta</button>
             </footer>
 
-            {/* Botones flotantes legales */}
             <div className="legal-fabs" aria-label="Accesos legales">
-                <button
-                    type="button"
-                    className="legal-fab"
-                    onClick={() => setLegalOpen("terms")}
-                    aria-label="Abrir Términos y condiciones"
-                >
-                    Términos y condiciones
-                </button>
-                <button
-                    type="button"
-                    className="legal-fab"
-                    onClick={() => setLegalOpen("data")}
-                    aria-label="Abrir Tratamiento de datos"
-                >
-                    Tratamiento de datos
-                </button>
+                <button type="button" className="legal-fab" onClick={() => setLegalOpen("terms")}>Términos y condiciones</button>
+                <button type="button" className="legal-fab" onClick={() => setLegalOpen("data")}>Tratamiento de datos</button>
             </div>
 
-            {/* modal editar */}
             {editOpen && (
                 <div className="modal-overlay" onClick={() => setEditOpen(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -212,43 +180,29 @@ export default function Profile() {
                 </div>
             )}
 
-            {/* modal confirm delete */}
             {confirm && (
                 <div className="modal-overlay">
                     <div className="modal">
-                        <p>
-                            ¿Estás seguro de querer eliminar esta cuenta?
-                            <br />Esta acción es irreversible.
-                        </p>
+                        <p>¿Estás seguro de querer eliminar esta cuenta?<br />Esta acción es irreversible.</p>
                         <div className="modal-actions">
-                            <button
-                                className="delete-btn"
-                                disabled={timer > 0}
-                                onClick={handleDelete}
-                            >
+                            <button className="delete-btn" disabled={timer > 0} onClick={handleDelete}>
                                 {timer > 0 ? `Eliminar cuenta (${timer})` : "Eliminar cuenta"}
                             </button>
-                            <button className="back-btn" onClick={() => setConfirm(false)}>
-                                Cancelar
-                            </button>
+                            <button className="back-btn" onClick={() => setConfirm(false)}>Cancelar</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* modal error */}
             {error && (
                 <div className="modal-overlay">
                     <div className="modal">
                         <p>{error}</p>
-                        <button className="back-btn" onClick={() => setError("")}>
-                            Volver
-                        </button>
+                        <button className="back-btn" onClick={() => setError("")}>Volver</button>
                     </div>
                 </div>
             )}
 
-            {/* Modales legales informativos */}
             <Modal
                 open={legalOpen === "terms"}
                 title="Términos y condiciones"
