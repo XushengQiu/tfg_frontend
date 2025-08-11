@@ -171,3 +171,58 @@ h1.dashboard-title{
 .dashboard-header-right{
   margin-right: 28px;    /* empuja el bloque de la derecha un poco a la izquierda */
 }
+
+/* ====== Visualizaciones en placeholder (derecha) ====== */
+.insight-container{ width:100%; }
+.insight-empty{ color:#777; text-align:center; }
+
+.insight-block{ width:100%; }
+.insight-title{
+  font-weight:600;
+  margin-bottom:.5rem;
+  display:flex; align-items:baseline; gap:.5rem;
+}
+.insight-title .muted{ color:#777; font-weight:400; }
+
+/* Gráfico numérico */
+.insight-svg{ width:100%; height:auto; display:block; }
+.tick{ fill:#666; font-size:.8rem; }
+.legend{ fill:#4a4a4a; font-size:.8rem; }
+
+/* Calendario booleano */
+.calendar-legend{
+  display:flex; gap:12px; align-items:center; color:#666; font-size:.9rem;
+  margin-bottom:.5rem;
+}
+.calendar-legend .dot{
+  width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px;
+  background:#d0d0d0;
+}
+.calendar-legend .dot.ok{ background:#2e7d32; }
+.calendar-legend .dot.ko{ background:#c62828; }
+.calendar-legend .dot.none{ background:#d0d0d0; }
+
+.calendar-grid{
+  display:grid;
+  grid-template-columns: repeat(7, minmax(0,1fr));
+  gap:6px;
+}
+.cal-head{
+  text-align:center; font-weight:600; color:#666; font-size:.85rem; margin-bottom:2px;
+}
+.cal-pad{ height:32px; }
+.cal-day{
+  height:32px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.85rem; color:#222; background:#eee;
+}
+.cal-day.ok{ background:#c8e6c9; }   /* verde suave */
+.cal-day.ko{ background:#ffcdd2; }   /* rojo suave */
+.cal-day.none{ background:#eee; color:#888; }
+
+/* --- Fix: quitar el scroll exterior de "Registros" --- */
+.goal-registros{
+  overflow: visible !important;   /* antes auto */
+  max-height: none !important;    /* quitamos el límite para que no scrollee ella */
+}
+/* nos quedamos con el scroll del div interno (inline style en GoalDetail.jsx) */

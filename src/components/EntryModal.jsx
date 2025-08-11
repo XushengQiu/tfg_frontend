@@ -88,7 +88,7 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                             <div style={{ display: "flex", alignItems: "center", gap: ".4rem", marginTop: ".4rem" }}>
                                 <input
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     min="0"
                                     required
                                     className="short"

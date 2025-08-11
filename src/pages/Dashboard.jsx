@@ -24,6 +24,7 @@ import EntryModal from "../components/EntryModal";
 import EditGoalModal from "../components/EditGoalModal";
 import GoalRow from "../components/GoalRow";
 import GoalDetail from "../components/GoalDetail";
+import GoalInsight from "../components/GoalInsight";
 import { capitalize as cap, fmtFecha } from "../utils/format";
 
 import "../index.css";
@@ -552,7 +553,7 @@ export default function Dashboard() {
                     </section>
 
                     <section className="placeholder card">
-                        <div className="placeholder-inner">Contenido (próximamente)</div>
+                        <GoalInsight goal={selectedGoal} />
                     </section>
                 </div>
             </div>
