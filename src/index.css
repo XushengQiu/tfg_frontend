@@ -226,3 +226,56 @@ h1.dashboard-title{
   max-height: none !important;    /* quitamos el límite para que no scrollee ella */
 }
 /* nos quedamos con el scroll del div interno (inline style en GoalDetail.jsx) */
+
+/* ——— Registros: tamaño un pelín menor y único scroll interno ——— */
+.goal-detail{ overflow: hidden; }           /* el contenedor no scrollea */
+.goal-registros{
+  max-height: 220px;                        /* antes ~230; así no “corta” la barra */
+  overflow: auto;                           /* scroll solo aquí */
+  padding-bottom: 6px;                      /* colchón para que se vea completa */
+  -webkit-overflow-scrolling: touch;        /* suave en móvil */
+  scrollbar-gutter: stable both-edges;      /* evita solapamientos del scrollbar */
+}
+
+/* ——— Cabeceras fijas (sticky) ——— */
+/* Metas (lista de la izquierda) */
+.goals-scroll{ overflow: auto; }
+.goals-scroll .goals-table thead th{
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);      /* línea finita bajo la cabecera */
+}
+
+/* Registros (en el detalle) */
+.goal-registros table{ width: 100%; border-collapse: collapse; }
+.goal-registros table thead th{
+  position: sticky;
+  top: 0;                                   /* siempre visible al hacer scroll */
+  background: #fff;
+  z-index: 2;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+
+/* Si tu tabla de registros usa una clase distinta para la cabecera,
+   déjala cubierta también (no hace daño tener ambos selectores). */
+.goal-registros .registros-table thead th{
+  position: sticky; top: 0; background:#fff; z-index:2;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+
+/* ── Ordenación en tabla de metas ───────────────────────────── */
+.sortable-th{
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sortable-th .sort-icons{
+  margin-left: 6px;
+  font-size: .85em;
+  color: #777;
+}
+.sortable-th.active .sort-icons{
+  color: #333;
+}

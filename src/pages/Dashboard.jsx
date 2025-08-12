@@ -1,7 +1,7 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Dashboard.jsx
 // ───────────────────────────────────────────────────────────────
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
 
@@ -29,7 +29,7 @@ import { capitalize as cap, fmtFecha } from "../utils/format";
 
 import "../index.css";
 
-/* Helper: mensaje del backend + status */
+/* Helper: saca mensaje del backend + status */
 const apiError = (err, fallback) => {
     const res = err?.response;
     const status = res?.status;
@@ -67,8 +67,26 @@ export default function Dashboard() {
 
     const [error, setError] = useState("");
 
-    // ← NUEVO: flag interno para evitar doble creación si se hace doble click rápido
+    // Evitar doble creación por doble click rápido
     const [isCreating, setIsCreating] = useState(false);
+
+    // ── Ordenación ──────────────────────────────────────────────
+    // sortKey: 'nombre' | 'fecha' | 'periodo' | null
+    const [sortKey, setSortKey] = useState(null);
+    const [sortDir, setSortDir] = useState("asc"); // 'asc' | 'desc'
+
+    // Reemplaza tu toggleSort por esta versión
+    const toggleSort = (key) => {
+        setSortDir((prevDir) => {
+            setSortKey((prevKey) => (prevKey === key ? key : key)); // asegura que se guarda la columna clicada
+            // Si cambias de columna → empieza en asc; si repites columna → alterna asc/desc
+            return sortKey === key ? (prevDir === "asc" ? "desc" : "asc") : "asc";
+        });
+    };
+
+
+    const ariaSort = (key) =>
+        sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
 
     const upsertGoal = useCallback((meta) => {
         if (!meta) return;
@@ -101,7 +119,10 @@ export default function Dashboard() {
         async (metas) =>
             Promise.all(
                 (metas || []).map(async (m) => {
-                    if (m.tipo === "Num" && (m.valorObjetivo === undefined || m.unidad === undefined)) {
+                    if (
+                        m.tipo === "Num" &&
+                        (m.valorObjetivo === undefined || m.unidad === undefined)
+                    ) {
                         try {
                             const { data: det } = await getGoalById(m._id);
                             return { ...m, valorObjetivo: det.valorObjetivo, unidad: det.unidad };
@@ -157,16 +178,17 @@ export default function Dashboard() {
     );
 
     const objectiveLabel = (g) =>
-        g.tipo === "Bool" ? "Boolean" : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
+        g.tipo === "Bool"
+            ? "Boolean"
+            : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
 
     const createdLabel = (g) => {
         const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
         return d ? fmtFecha(d) : "-";
     };
 
-    /* -------------------- CREAR META (con bloqueo anti-doble click) -------------------- */
+    /* -------------------- CREAR META -------------------- */
     const handleCreateGoal = async (form) => {
-        // si ya hay una creación en curso, ignorar la llamada
         if (isCreating) return;
         setIsCreating(true);
 
@@ -235,21 +257,40 @@ export default function Dashboard() {
         } catch (e) {
             setError(apiError(e, "No se pudo crear la meta."));
         } finally {
-            setIsCreating(false); // liberamos el bloqueo
+            setIsCreating(false);
         }
     };
 
+    // Reemplaza COMPLETO handleFinalize por esto
     const handleFinalize = async (id) => {
         if (!window.confirm("¿Marcar esta meta como COMPLETADA?")) return;
+
         try {
-            const { data } = await finalizeGoal(id);
-            upsertGoal(data?.meta);
-            if (data?.estadisticasUsuario) setStats(data.estadisticasUsuario);
-            syncSelected(data?.meta ?? id);
+            const res = await finalizeGoal(id);
+            const metaSrv = res?.data?.meta;
+
+            if (metaSrv) {
+                // El backend devuelve la meta finalizada → úsala tal cual
+                upsertGoal(metaSrv);
+                setSelectedGoal((sel) => (sel && sel._id === id ? metaSrv : sel));
+            } else {
+                // Fallback optimista: marcar finalizada en local
+                setGoals((curr) =>
+                    curr.map((g) => (g._id === id ? { ...g, finalizado: true } : g))
+                );
+                setSelectedGoal((sel) =>
+                    sel && sel._id === id ? { ...sel, finalizado: true } : sel
+                );
+            }
+
+            // (Opcional) si el backend manda estadísticas, las aplicamos sin hacer GET extra
+            const statsSrv = res?.data?.estadisticasUsuario || res?.data?.estadisticas;
+            if (statsSrv) setStats(statsSrv);
         } catch (e) {
             setError(apiError(e, "No se pudo finalizar la meta."));
         }
     };
+
 
     const handleDelete = async (id) => {
         if (!window.confirm("¿Eliminar esta meta?")) return;
@@ -307,11 +348,9 @@ export default function Dashboard() {
         }
     };
 
-    // === REEMPLAZA COMPLETO handleSaveEntry ===
     const handleSaveEntry = async (data) => {
         if (!entryGoal) return;
 
-        // No permitir fechas anteriores al inicio de la meta
         const rawCreation = Array.isArray(entryGoal.fecha) ? entryGoal.fecha[0] : entryGoal.fecha;
         const minISO = rawCreation ? String(rawCreation).slice(0, 10) : undefined;
         if (minISO && data.fecha < minISO) {
@@ -333,7 +372,6 @@ export default function Dashboard() {
         };
 
         try {
-            // POST según tipo
             const res =
                 entryGoal.tipo === "Bool"
                     ? await createRecordBool(entryGoal._id, {
@@ -345,15 +383,12 @@ export default function Dashboard() {
                         valorNum: Number(data.valorNum),
                     });
 
-            // Preferimos SIEMPRE la meta que devuelve el backend
             let metaFromServer = res?.data?.meta;
 
-            // Fallback: si el backend devolviera metas[]
             if (!metaFromServer && Array.isArray(res?.data?.metas)) {
                 metaFromServer = res.data.metas.find((m) => m._id === entryGoal._id);
             }
 
-            // Si por alguna razón no trae registros, los fusionamos localmente
             const newReg = toRecord(entryGoal.tipo, data);
             let finalMeta;
 
@@ -362,7 +397,6 @@ export default function Dashboard() {
                     ? metaFromServer
                     : mergeRecordIntoMeta(metaFromServer, newReg);
             } else {
-                // Último recurso: partimos de la meta actual en memoria
                 const base =
                     goals.find((g) => g._id === entryGoal._id) ||
                     entryGoal ||
@@ -371,11 +405,8 @@ export default function Dashboard() {
                 finalMeta = mergeRecordIntoMeta(base, newReg);
             }
 
-            // Actualizamos lista y detalle INMEDIATAMENTE
             setGoals((curr) => curr.map((g) => (g._id === finalMeta._id ? finalMeta : g)));
             setSelectedGoal((sel) => (sel && sel._id === finalMeta._id ? finalMeta : sel));
-
-            // Cerramos modal
             setEntryGoal(null);
         } catch (e) {
             setError(apiError(e, "No se pudo crear el registro."));
@@ -417,7 +448,6 @@ export default function Dashboard() {
                     ? await updateGoalBool(editGoal._id, body)
                     : await updateGoalNum(editGoal._id, body);
 
-            // actualización local inmediata
             const locallyUpdated = { ...editGoal, ...body };
             setGoals((curr) =>
                 curr.map((g) => (g._id === editGoal._id ? { ...g, ...locallyUpdated } : g))
@@ -455,6 +485,60 @@ export default function Dashboard() {
         }
     };
 
+    // ── Comparadores para ordenación (deben definirse antes del useMemo) ─────────
+    const startMillis = (g) => {
+        const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
+        return d ? new Date(d).getTime() : 0;
+    };
+
+    const periodDays = (g) => {
+        const u = String(g.duracionUnidad || "").toLowerCase();
+        if (u.startsWith("indef")) return Infinity;
+        const n = Number(g.duracionValor) || 0;
+        const mul =
+            u.startsWith("día") || u.startsWith("dia")
+                ? 1
+                : u.startsWith("sem")
+                    ? 7
+                    : u.startsWith("mes")
+                        ? 30
+                        : u.startsWith("año") || u.startsWith("ano")
+                            ? 365
+                            : 0;
+        return n * mul;
+    };
+
+    const iconFor = (key) => (sortKey !== key ? "⇅" : sortDir === "asc" ? "▲" : "▼");
+
+    // ⚠️ Hook SIEMPRE antes de cualquier return (evita el error de hooks condicionales)
+    const goalsSorted = useMemo(() => {
+        const arr = [...goals];
+        if (!sortKey) return arr;
+
+        arr.sort((a, b) => {
+            if (sortKey === "nombre") {
+                const res = (a.nombre || "").localeCompare(b.nombre || "", "es", {
+                    sensitivity: "base",
+                });
+                return sortDir === "asc" ? res : -res;
+            }
+            if (sortKey === "fecha") {
+                const res = startMillis(a) - startMillis(b);
+                return sortDir === "asc" ? res : -res;
+            }
+            if (sortKey === "periodo") {
+                const da = periodDays(a);
+                const db = periodDays(b);
+                const res = da - db; // Infinity irá al final en asc
+                return sortDir === "asc" ? res : -res; // en desc, Infinity (indefinidos) arriba
+            }
+            return 0;
+        });
+
+        return arr;
+    }, [goals, sortKey, sortDir]);
+
+    // A partir de aquí ya podemos cortar el render si está cargando
     if (loading) return <p className="dashboard-loading">Cargando…</p>;
 
     const profileSnapshot = profile
@@ -486,7 +570,6 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            {/* tablero y resto de layout que ya tenías */}
             <div className="board">
                 <div className="left-pane card">
                     <div className="goals-scroll">
@@ -494,15 +577,37 @@ export default function Dashboard() {
                             <table className="goals-table">
                                 <thead>
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Fecha de inicio</th>
-                                    <th>Periodo</th>
+                                    <th
+                                        className={`sortable-th ${sortKey === "nombre" ? "active" : ""}`}
+                                        onClick={() => toggleSort("nombre")}
+                                        aria-sort={ariaSort("nombre")}
+                                        title="Ordenar por nombre"
+                                    >
+                                        Nombre <span className="sort-icons">{iconFor("nombre")}</span>
+                                    </th>
+                                    <th
+                                        className={`sortable-th ${sortKey === "fecha" ? "active" : ""}`}
+                                        onClick={() => toggleSort("fecha")}
+                                        aria-sort={ariaSort("fecha")}
+                                        title="Ordenar por fecha de inicio"
+                                    >
+                                        Fecha de inicio{" "}
+                                        <span className="sort-icons">{iconFor("fecha")}</span>
+                                    </th>
+                                    <th
+                                        className={`sortable-th ${sortKey === "periodo" ? "active" : ""}`}
+                                        onClick={() => toggleSort("periodo")}
+                                        aria-sort={ariaSort("periodo")}
+                                        title="Ordenar por periodo"
+                                    >
+                                        Periodo <span className="sort-icons">{iconFor("periodo")}</span>
+                                    </th>
                                     <th>Objetivo</th>
                                     <th>Acciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {goals.map((g) => (
+                                {goalsSorted.map((g) => (
                                     <GoalRow
                                         key={g._id}
                                         goal={g}
@@ -536,11 +641,13 @@ export default function Dashboard() {
                         {stats ? (
                             <div className="stats-content">
                                 <p>
-                                    Total<br />
+                                    Total
+                                    <br />
                                     <strong>{stats.totalMetas}</strong>
                                 </p>
                                 <p>
-                                    Finalizadas<br />
+                                    Finalizadas
+                                    <br />
                                     <strong>{stats.totalMetasFinalizadas}</strong>
                                 </p>
                                 <p style={{ gridColumn: "1 / -1" }}>
@@ -558,7 +665,6 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* usa tu NewGoalModal tal cual; no pasamos props nuevas */}
             <NewGoalModal
                 open={openNew}
                 onClose={() => setOpenNew(false)}
