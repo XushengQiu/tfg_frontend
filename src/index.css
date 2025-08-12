@@ -279,3 +279,59 @@ h1.dashboard-title{
 .sortable-th.active .sort-icons{
   color: #333;
 }
+
+/* ====== Interacción del gráfico (tooltip/hover) ====== */
+.insight-target-line{ stroke:#7a9cff; }
+
+.insight-hover-line{
+  stroke:#90caf9;
+  stroke-width:1.5;
+  stroke-dasharray:4 4;
+}
+
+.insight-hover-dot{
+  fill:#2e7d32;
+  stroke:#fff;
+  stroke-width:2;
+}
+
+.insight-tooltip text{
+  font-size:.82rem;
+  fill:#222;
+}
+
+.insight-tooltip-bg{
+  fill:#ffffff;
+  stroke:#cfd8dc;
+}
+
+/* === solo lo nuevo/actualizado respecto a tu hoja === */
+
+/* Título un poco más arriba en la tarjeta de insights */
+.insight-title.bump-up{
+  margin-top: -8px;   /* “sube” ligeramente dentro de la card */
+}
+
+/* Grid del calendario (ya lo tienes), añadimos navegación */
+.calendar-nav{
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;   /* centrado bajo el grid (bajo “Jueves”) */
+  gap: 12px;
+}
+.cal-nav-btn{
+  padding: .25rem .75rem;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.cal-nav-btn:hover{ background:#f6f6f6; }
+.cal-nav-btn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* (el resto de tus estilos se mantienen tal cual) */

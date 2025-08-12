@@ -7,7 +7,7 @@ import { useAuth } from "../auth-context";
 
 import {
     getProfile,
-    getGoalById,
+    getGoalById,        // lo seguimos usando para traer REGISTROS del detalle
     createGoalBool,
     createGoalNum,
     updateGoalBool,
@@ -29,7 +29,7 @@ import { capitalize as cap, fmtFecha } from "../utils/format";
 
 import "../index.css";
 
-/* Helper: saca mensaje del backend + status */
+/* Extrae mensaje de error legible */
 const apiError = (err, fallback) => {
     const res = err?.response;
     const status = res?.status;
@@ -66,28 +66,30 @@ export default function Dashboard() {
     const [editGoal, setEditGoal] = useState(null);
 
     const [error, setError] = useState("");
-
-    // Evitar doble creación por doble click rápido
-    const [isCreating, setIsCreating] = useState(false);
+    const [isCreating, setIsCreating] = useState(false); // evitar doble click en "Crear"
 
     // ── Ordenación ──────────────────────────────────────────────
-    // sortKey: 'nombre' | 'fecha' | 'periodo' | null
-    const [sortKey, setSortKey] = useState(null);
-    const [sortDir, setSortDir] = useState("asc"); // 'asc' | 'desc'
+    const [sortKey, setSortKey] = useState(null);     // 'nombre' | 'fecha' | 'periodo' | null
+    const [sortDir, setSortDir] = useState("asc");    // 'asc' | 'desc'
 
-    // Reemplaza tu toggleSort por esta versión
     const toggleSort = (key) => {
-        setSortDir((prevDir) => {
-            setSortKey((prevKey) => (prevKey === key ? key : key)); // asegura que se guarda la columna clicada
-            // Si cambias de columna → empieza en asc; si repites columna → alterna asc/desc
-            return sortKey === key ? (prevDir === "asc" ? "desc" : "asc") : "asc";
+        setSortKey((prevKey) => {
+            if (prevKey === key) {
+                // misma columna → alterna dirección
+                setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                return prevKey;
+            } else {
+                // columna distinta → empieza asc
+                setSortDir("asc");
+                return key;
+            }
         });
     };
-
 
     const ariaSort = (key) =>
         sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
 
+    // Upsert meta en el array
     const upsertGoal = useCallback((meta) => {
         if (!meta) return;
         setGoals((curr) => {
@@ -115,41 +117,21 @@ export default function Dashboard() {
         []
     );
 
-    const withNumDetails = useCallback(
-        async (metas) =>
-            Promise.all(
-                (metas || []).map(async (m) => {
-                    if (
-                        m.tipo === "Num" &&
-                        (m.valorObjetivo === undefined || m.unidad === undefined)
-                    ) {
-                        try {
-                            const { data: det } = await getGoalById(m._id);
-                            return { ...m, valorObjetivo: det.valorObjetivo, unidad: det.unidad };
-                        } catch {
-                            return m;
-                        }
-                    }
-                    return m;
-                })
-            ),
-        []
-    );
-
+    // Carga inicial: el backend YA trae valorObjetivo/unidad para metas Num
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await getProfile();
-            const metasConDetalle = await withNumDetails(data.metas);
-            setGoals(metasConDetalle);
-            setStats(data.estadisticas);
+            setGoals(data.metas || []);
+            setStats(data.estadisticas || null);
         } catch (err) {
             setError(apiError(err, "No se pudieron cargar los datos."));
         } finally {
             setLoading(false);
         }
-    }, [withNumDetails]);
+    }, []);
 
+    // inicial + cache de Profile para volver sin refetch
     useEffect(() => {
         const cache = location.state?.dashboardCache;
         if (cache && Array.isArray(cache.goals)) {
@@ -163,11 +145,12 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadData]);
 
+    // Asegura traer REGISTROS (detalle) cuando haga falta
     const ensureGoalDetail = useCallback(
         async (goal) => {
             if (goal.registros !== undefined) return;
             try {
-                const { data } = await getGoalById(goal._id);
+                const { data } = await getGoalById(goal._id); // devuelve registros + resto de meta
                 upsertGoal(data);
                 syncSelected(data);
             } catch (err) {
@@ -178,9 +161,7 @@ export default function Dashboard() {
     );
 
     const objectiveLabel = (g) =>
-        g.tipo === "Bool"
-            ? "Boolean"
-            : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
+        g.tipo === "Bool" ? "Boolean" : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
 
     const createdLabel = (g) => {
         const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
@@ -222,35 +203,13 @@ export default function Dashboard() {
                 return;
             }
 
-            const merged = await Promise.all(
-                payload.metas.map(async (m) => {
-                    const ex = goals.find((g) => g._id === m._id);
-                    if (ex) {
-                        return m.tipo === "Num"
-                            ? {
-                                ...ex,
-                                ...m,
-                                valorObjetivo: m.valorObjetivo ?? ex.valorObjetivo,
-                                unidad: m.unidad ?? ex.unidad,
-                            }
-                            : { ...ex, ...m };
-                    }
-                    if (
-                        m.tipo === "Num" &&
-                        (m.valorObjetivo === undefined || m.unidad === undefined)
-                    ) {
-                        try {
-                            const { data: det } = await getGoalById(m._id);
-                            return { ...m, valorObjetivo: det.valorObjetivo, unidad: det.unidad };
-                        } catch {
-                            return m;
-                        }
-                    }
-                    return m;
-                })
-            );
+            // Reemplaza/añade metas usando sólo lo que devuelve el backend
+            setGoals((prev) => {
+                const map = new Map(prev.map((m) => [m._id, m]));
+                for (const m of payload.metas) map.set(m._id, { ...(map.get(m._id) || {}), ...m });
+                return Array.from(map.values());
+            });
 
-            setGoals(merged);
             if (payload.estadisticas) setStats(payload.estadisticas);
             setSelectedGoal(null);
             setOpenNew(false);
@@ -261,7 +220,7 @@ export default function Dashboard() {
         }
     };
 
-    // Reemplaza COMPLETO handleFinalize por esto
+    /* -------------------- FINALIZAR META -------------------- */
     const handleFinalize = async (id) => {
         if (!window.confirm("¿Marcar esta meta como COMPLETADA?")) return;
 
@@ -270,20 +229,14 @@ export default function Dashboard() {
             const metaSrv = res?.data?.meta;
 
             if (metaSrv) {
-                // El backend devuelve la meta finalizada → úsala tal cual
                 upsertGoal(metaSrv);
                 setSelectedGoal((sel) => (sel && sel._id === id ? metaSrv : sel));
             } else {
-                // Fallback optimista: marcar finalizada en local
-                setGoals((curr) =>
-                    curr.map((g) => (g._id === id ? { ...g, finalizado: true } : g))
-                );
-                setSelectedGoal((sel) =>
-                    sel && sel._id === id ? { ...sel, finalizado: true } : sel
-                );
+                // fallback optimista
+                setGoals((curr) => curr.map((g) => (g._id === id ? { ...g, finalizado: true } : g)));
+                setSelectedGoal((sel) => (sel && sel._id === id ? { ...sel, finalizado: true } : sel));
             }
 
-            // (Opcional) si el backend manda estadísticas, las aplicamos sin hacer GET extra
             const statsSrv = res?.data?.estadisticasUsuario || res?.data?.estadisticas;
             if (statsSrv) setStats(statsSrv);
         } catch (e) {
@@ -291,7 +244,7 @@ export default function Dashboard() {
         }
     };
 
-
+    /* -------------------- ELIMINAR META -------------------- */
     const handleDelete = async (id) => {
         if (!window.confirm("¿Eliminar esta meta?")) return;
         const toDelete = goals.find((g) => g._id === id);
@@ -312,9 +265,7 @@ export default function Dashboard() {
                     prevFinal - (toDelete?.finalizado ? 1 : 0)
                 );
                 const porcentajeFinalizadas =
-                    totalMetas === 0
-                        ? 0
-                        : Math.round((totalMetasFinalizadas / totalMetas) * 100);
+                    totalMetas === 0 ? 0 : Math.round((totalMetasFinalizadas / totalMetas) * 100);
 
                 return {
                     ...(prev || {}),
@@ -328,6 +279,7 @@ export default function Dashboard() {
         }
     };
 
+    /* -------------------- ELIMINAR REGISTRO -------------------- */
     const handleDeleteRecord = async (goalId, fechaISO) => {
         const g = goals.find((x) => x._id === goalId);
         if (g?.finalizado) return;
@@ -348,10 +300,13 @@ export default function Dashboard() {
         }
     };
 
+    /* -------------------- GUARDAR REGISTRO -------------------- */
     const handleSaveEntry = async (data) => {
         if (!entryGoal) return;
 
-        const rawCreation = Array.isArray(entryGoal.fecha) ? entryGoal.fecha[0] : entryGoal.fecha;
+        const rawCreation = Array.isArray(entryGoal.fecha)
+            ? entryGoal.fecha[0]
+            : entryGoal.fecha;
         const minISO = rawCreation ? String(rawCreation).slice(0, 10) : undefined;
         if (minISO && data.fecha < minISO) {
             setError("La fecha del registro no puede ser anterior a la fecha de inicio de la meta.");
@@ -384,7 +339,6 @@ export default function Dashboard() {
                     });
 
             let metaFromServer = res?.data?.meta;
-
             if (!metaFromServer && Array.isArray(res?.data?.metas)) {
                 metaFromServer = res.data.metas.find((m) => m._id === entryGoal._id);
             }
@@ -398,10 +352,7 @@ export default function Dashboard() {
                     : mergeRecordIntoMeta(metaFromServer, newReg);
             } else {
                 const base =
-                    goals.find((g) => g._id === entryGoal._id) ||
-                    entryGoal ||
-                    selectedGoal ||
-                    {};
+                    goals.find((g) => g._id === entryGoal._id) || entryGoal || selectedGoal || {};
                 finalMeta = mergeRecordIntoMeta(base, newReg);
             }
 
@@ -413,6 +364,7 @@ export default function Dashboard() {
         }
     };
 
+    /* -------------------- EDITAR META -------------------- */
     const openEditModal = (g) => setEditGoal(g);
 
     const handleSaveEdit = async (form) => {
@@ -448,6 +400,7 @@ export default function Dashboard() {
                     ? await updateGoalBool(editGoal._id, body)
                     : await updateGoalNum(editGoal._id, body);
 
+            // actualiza localmente con lo que pediste
             const locallyUpdated = { ...editGoal, ...body };
             setGoals((curr) =>
                 curr.map((g) => (g._id === editGoal._id ? { ...g, ...locallyUpdated } : g))
@@ -465,19 +418,8 @@ export default function Dashboard() {
             } else if (Array.isArray(payload.metas)) {
                 const fromServer = payload.metas.find((m) => m._id === locallyUpdated._id);
                 if (fromServer) {
-                    let finalMeta = fromServer;
-                    if (
-                        finalMeta.tipo === "Num" &&
-                        (finalMeta.valorObjetivo === undefined || finalMeta.unidad === undefined)
-                    ) {
-                        finalMeta = {
-                            ...finalMeta,
-                            valorObjetivo: finalMeta.valorObjetivo ?? locallyUpdated.valorObjetivo,
-                            unidad: finalMeta.unidad ?? locallyUpdated.unidad,
-                        };
-                    }
-                    upsertGoal(finalMeta);
-                    syncSelected(finalMeta);
+                    upsertGoal(fromServer);
+                    syncSelected(fromServer);
                 }
             }
         } catch (e) {
@@ -485,7 +427,7 @@ export default function Dashboard() {
         }
     };
 
-    // ── Comparadores para ordenación (deben definirse antes del useMemo) ─────────
+    // ── Comparadores para ordenación ─────────────────────────────
     const startMillis = (g) => {
         const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
         return d ? new Date(d).getTime() : 0;
@@ -510,7 +452,7 @@ export default function Dashboard() {
 
     const iconFor = (key) => (sortKey !== key ? "⇅" : sortDir === "asc" ? "▲" : "▼");
 
-    // ⚠️ Hook SIEMPRE antes de cualquier return (evita el error de hooks condicionales)
+    // Ordenación memorizada
     const goalsSorted = useMemo(() => {
         const arr = [...goals];
         if (!sortKey) return arr;
@@ -529,8 +471,8 @@ export default function Dashboard() {
             if (sortKey === "periodo") {
                 const da = periodDays(a);
                 const db = periodDays(b);
-                const res = da - db; // Infinity irá al final en asc
-                return sortDir === "asc" ? res : -res; // en desc, Infinity (indefinidos) arriba
+                const res = da - db; // Infinity al final en asc
+                return sortDir === "asc" ? res : -res; // en desc, Infinity (indef) arriba
             }
             return 0;
         });
@@ -538,7 +480,14 @@ export default function Dashboard() {
         return arr;
     }, [goals, sortKey, sortDir]);
 
-    // A partir de aquí ya podemos cortar el render si está cargando
+    // Selección por defecto: primera meta visible
+    useEffect(() => {
+        if (selectedGoal || goalsSorted.length === 0) return;
+        const first = goalsSorted[0];
+        setSelectedGoal(first);
+        ensureGoalDetail(first); // traer registros si no están
+    }, [goalsSorted, selectedGoal, ensureGoalDetail]);
+
     if (loading) return <p className="dashboard-loading">Cargando…</p>;
 
     const profileSnapshot = profile
@@ -651,7 +600,8 @@ export default function Dashboard() {
                                     <strong>{stats.totalMetasFinalizadas}</strong>
                                 </p>
                                 <p style={{ gridColumn: "1 / -1" }}>
-                                    Porcentaje finalizadas: <strong>{stats.porcentajeFinalizadas}%</strong>
+                                    Porcentaje finalizadas:{" "}
+                                    <strong>{stats.porcentajeFinalizadas}%</strong>
                                 </p>
                             </div>
                         ) : (
