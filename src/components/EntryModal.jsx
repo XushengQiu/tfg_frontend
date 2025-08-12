@@ -88,8 +88,9 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                             <div style={{ display: "flex", alignItems: "center", gap: ".4rem", marginTop: ".4rem" }}>
                                 <input
                                     type="number"
-                                    step="1"
+                                    step="any"          // << permitir decimales, spinner sigue a saltos de 1
                                     min="0"
+                                    inputMode="decimal" // << opcional, mejor UX en móvil
                                     required
                                     className="short"
                                     value={data.valorNum}

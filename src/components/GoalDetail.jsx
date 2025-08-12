@@ -9,7 +9,7 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
 
     return (
         <div className="goal-detail">
-            {/* registros */}
+            {/* Registros */}
             <div className="goal-registros">
                 <h3>Registros</h3>
 
@@ -33,7 +33,11 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
                                     <tr key={r.fecha}>
                                         <td>{fmtFecha(r.fecha)}</td>
                                         <td style={{ textAlign: "center" }}>
-                                            {goal.tipo === "Bool" ? (r.valorBool ? "✅" : "❌") : r.valorNum}
+                                            {goal.tipo === "Bool"
+                                                ? r.valorBool
+                                                    ? "✅"
+                                                    : "❌"
+                                                : r.valorNum}
                                         </td>
                                         <td style={{ textAlign: "center" }}>
                                             {canDelete ? (
@@ -55,8 +59,11 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
                 )}
             </div>
 
-            {/* descripción */}
+            {/* Meta + Descripción */}
             <div className="goal-descripcion">
+                <h3>Meta</h3>
+                <p>{goal.nombre}</p>
+
                 <h3>Descripción</h3>
                 <p>{goal.descripcion || "Sin descripción."}</p>
             </div>

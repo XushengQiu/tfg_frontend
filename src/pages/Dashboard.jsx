@@ -1,13 +1,13 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Dashboard.jsx
 // ───────────────────────────────────────────────────────────────
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
 
 import {
     getProfile,
-    getGoalById,
+    getGoalById,        // lo seguimos usando para traer REGISTROS del detalle
     createGoalBool,
     createGoalNum,
     updateGoalBool,
@@ -29,7 +29,7 @@ import { capitalize as cap, fmtFecha } from "../utils/format";
 
 import "../index.css";
 
-/* Helper: mensaje del backend + status */
+/* Extrae mensaje de error legible */
 const apiError = (err, fallback) => {
     const res = err?.response;
     const status = res?.status;
@@ -66,10 +66,30 @@ export default function Dashboard() {
     const [editGoal, setEditGoal] = useState(null);
 
     const [error, setError] = useState("");
+    const [isCreating, setIsCreating] = useState(false); // evitar doble click en "Crear"
 
-    // ← NUEVO: flag interno para evitar doble creación si se hace doble click rápido
-    const [isCreating, setIsCreating] = useState(false);
+    // ── Ordenación ──────────────────────────────────────────────
+    const [sortKey, setSortKey] = useState(null);     // 'nombre' | 'fecha' | 'periodo' | null
+    const [sortDir, setSortDir] = useState("asc");    // 'asc' | 'desc'
 
+    const toggleSort = (key) => {
+        setSortKey((prevKey) => {
+            if (prevKey === key) {
+                // misma columna → alterna dirección
+                setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                return prevKey;
+            } else {
+                // columna distinta → empieza asc
+                setSortDir("asc");
+                return key;
+            }
+        });
+    };
+
+    const ariaSort = (key) =>
+        sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+
+    // Upsert meta en el array
     const upsertGoal = useCallback((meta) => {
         if (!meta) return;
         setGoals((curr) => {
@@ -97,38 +117,21 @@ export default function Dashboard() {
         []
     );
 
-    const withNumDetails = useCallback(
-        async (metas) =>
-            Promise.all(
-                (metas || []).map(async (m) => {
-                    if (m.tipo === "Num" && (m.valorObjetivo === undefined || m.unidad === undefined)) {
-                        try {
-                            const { data: det } = await getGoalById(m._id);
-                            return { ...m, valorObjetivo: det.valorObjetivo, unidad: det.unidad };
-                        } catch {
-                            return m;
-                        }
-                    }
-                    return m;
-                })
-            ),
-        []
-    );
-
+    // Carga inicial: el backend YA trae valorObjetivo/unidad para metas Num
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
             const { data } = await getProfile();
-            const metasConDetalle = await withNumDetails(data.metas);
-            setGoals(metasConDetalle);
-            setStats(data.estadisticas);
+            setGoals(data.metas || []);
+            setStats(data.estadisticas || null);
         } catch (err) {
             setError(apiError(err, "No se pudieron cargar los datos."));
         } finally {
             setLoading(false);
         }
-    }, [withNumDetails]);
+    }, []);
 
+    // inicial + cache de Profile para volver sin refetch
     useEffect(() => {
         const cache = location.state?.dashboardCache;
         if (cache && Array.isArray(cache.goals)) {
@@ -142,11 +145,12 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadData]);
 
+    // Asegura traer REGISTROS (detalle) cuando haga falta
     const ensureGoalDetail = useCallback(
         async (goal) => {
             if (goal.registros !== undefined) return;
             try {
-                const { data } = await getGoalById(goal._id);
+                const { data } = await getGoalById(goal._id); // devuelve registros + resto de meta
                 upsertGoal(data);
                 syncSelected(data);
             } catch (err) {
@@ -164,9 +168,8 @@ export default function Dashboard() {
         return d ? fmtFecha(d) : "-";
     };
 
-    /* -------------------- CREAR META (con bloqueo anti-doble click) -------------------- */
+    /* -------------------- CREAR META -------------------- */
     const handleCreateGoal = async (form) => {
-        // si ya hay una creación en curso, ignorar la llamada
         if (isCreating) return;
         setIsCreating(true);
 
@@ -200,57 +203,48 @@ export default function Dashboard() {
                 return;
             }
 
-            const merged = await Promise.all(
-                payload.metas.map(async (m) => {
-                    const ex = goals.find((g) => g._id === m._id);
-                    if (ex) {
-                        return m.tipo === "Num"
-                            ? {
-                                ...ex,
-                                ...m,
-                                valorObjetivo: m.valorObjetivo ?? ex.valorObjetivo,
-                                unidad: m.unidad ?? ex.unidad,
-                            }
-                            : { ...ex, ...m };
-                    }
-                    if (
-                        m.tipo === "Num" &&
-                        (m.valorObjetivo === undefined || m.unidad === undefined)
-                    ) {
-                        try {
-                            const { data: det } = await getGoalById(m._id);
-                            return { ...m, valorObjetivo: det.valorObjetivo, unidad: det.unidad };
-                        } catch {
-                            return m;
-                        }
-                    }
-                    return m;
-                })
-            );
+            // Reemplaza/añade metas usando sólo lo que devuelve el backend
+            setGoals((prev) => {
+                const map = new Map(prev.map((m) => [m._id, m]));
+                for (const m of payload.metas) map.set(m._id, { ...(map.get(m._id) || {}), ...m });
+                return Array.from(map.values());
+            });
 
-            setGoals(merged);
             if (payload.estadisticas) setStats(payload.estadisticas);
             setSelectedGoal(null);
             setOpenNew(false);
         } catch (e) {
             setError(apiError(e, "No se pudo crear la meta."));
         } finally {
-            setIsCreating(false); // liberamos el bloqueo
+            setIsCreating(false);
         }
     };
 
+    /* -------------------- FINALIZAR META -------------------- */
     const handleFinalize = async (id) => {
         if (!window.confirm("¿Marcar esta meta como COMPLETADA?")) return;
+
         try {
-            const { data } = await finalizeGoal(id);
-            upsertGoal(data?.meta);
-            if (data?.estadisticasUsuario) setStats(data.estadisticasUsuario);
-            syncSelected(data?.meta ?? id);
+            const res = await finalizeGoal(id);
+            const metaSrv = res?.data?.meta;
+
+            if (metaSrv) {
+                upsertGoal(metaSrv);
+                setSelectedGoal((sel) => (sel && sel._id === id ? metaSrv : sel));
+            } else {
+                // fallback optimista
+                setGoals((curr) => curr.map((g) => (g._id === id ? { ...g, finalizado: true } : g)));
+                setSelectedGoal((sel) => (sel && sel._id === id ? { ...sel, finalizado: true } : sel));
+            }
+
+            const statsSrv = res?.data?.estadisticasUsuario || res?.data?.estadisticas;
+            if (statsSrv) setStats(statsSrv);
         } catch (e) {
             setError(apiError(e, "No se pudo finalizar la meta."));
         }
     };
 
+    /* -------------------- ELIMINAR META -------------------- */
     const handleDelete = async (id) => {
         if (!window.confirm("¿Eliminar esta meta?")) return;
         const toDelete = goals.find((g) => g._id === id);
@@ -271,9 +265,7 @@ export default function Dashboard() {
                     prevFinal - (toDelete?.finalizado ? 1 : 0)
                 );
                 const porcentajeFinalizadas =
-                    totalMetas === 0
-                        ? 0
-                        : Math.round((totalMetasFinalizadas / totalMetas) * 100);
+                    totalMetas === 0 ? 0 : Math.round((totalMetasFinalizadas / totalMetas) * 100);
 
                 return {
                     ...(prev || {}),
@@ -287,6 +279,7 @@ export default function Dashboard() {
         }
     };
 
+    /* -------------------- ELIMINAR REGISTRO -------------------- */
     const handleDeleteRecord = async (goalId, fechaISO) => {
         const g = goals.find((x) => x._id === goalId);
         if (g?.finalizado) return;
@@ -307,12 +300,13 @@ export default function Dashboard() {
         }
     };
 
-    // === REEMPLAZA COMPLETO handleSaveEntry ===
+    /* -------------------- GUARDAR REGISTRO -------------------- */
     const handleSaveEntry = async (data) => {
         if (!entryGoal) return;
 
-        // No permitir fechas anteriores al inicio de la meta
-        const rawCreation = Array.isArray(entryGoal.fecha) ? entryGoal.fecha[0] : entryGoal.fecha;
+        const rawCreation = Array.isArray(entryGoal.fecha)
+            ? entryGoal.fecha[0]
+            : entryGoal.fecha;
         const minISO = rawCreation ? String(rawCreation).slice(0, 10) : undefined;
         if (minISO && data.fecha < minISO) {
             setError("La fecha del registro no puede ser anterior a la fecha de inicio de la meta.");
@@ -333,7 +327,6 @@ export default function Dashboard() {
         };
 
         try {
-            // POST según tipo
             const res =
                 entryGoal.tipo === "Bool"
                     ? await createRecordBool(entryGoal._id, {
@@ -345,15 +338,11 @@ export default function Dashboard() {
                         valorNum: Number(data.valorNum),
                     });
 
-            // Preferimos SIEMPRE la meta que devuelve el backend
             let metaFromServer = res?.data?.meta;
-
-            // Fallback: si el backend devolviera metas[]
             if (!metaFromServer && Array.isArray(res?.data?.metas)) {
                 metaFromServer = res.data.metas.find((m) => m._id === entryGoal._id);
             }
 
-            // Si por alguna razón no trae registros, los fusionamos localmente
             const newReg = toRecord(entryGoal.tipo, data);
             let finalMeta;
 
@@ -362,26 +351,20 @@ export default function Dashboard() {
                     ? metaFromServer
                     : mergeRecordIntoMeta(metaFromServer, newReg);
             } else {
-                // Último recurso: partimos de la meta actual en memoria
                 const base =
-                    goals.find((g) => g._id === entryGoal._id) ||
-                    entryGoal ||
-                    selectedGoal ||
-                    {};
+                    goals.find((g) => g._id === entryGoal._id) || entryGoal || selectedGoal || {};
                 finalMeta = mergeRecordIntoMeta(base, newReg);
             }
 
-            // Actualizamos lista y detalle INMEDIATAMENTE
             setGoals((curr) => curr.map((g) => (g._id === finalMeta._id ? finalMeta : g)));
             setSelectedGoal((sel) => (sel && sel._id === finalMeta._id ? finalMeta : sel));
-
-            // Cerramos modal
             setEntryGoal(null);
         } catch (e) {
             setError(apiError(e, "No se pudo crear el registro."));
         }
     };
 
+    /* -------------------- EDITAR META -------------------- */
     const openEditModal = (g) => setEditGoal(g);
 
     const handleSaveEdit = async (form) => {
@@ -417,7 +400,7 @@ export default function Dashboard() {
                     ? await updateGoalBool(editGoal._id, body)
                     : await updateGoalNum(editGoal._id, body);
 
-            // actualización local inmediata
+            // actualiza localmente con lo que pediste
             const locallyUpdated = { ...editGoal, ...body };
             setGoals((curr) =>
                 curr.map((g) => (g._id === editGoal._id ? { ...g, ...locallyUpdated } : g))
@@ -435,25 +418,75 @@ export default function Dashboard() {
             } else if (Array.isArray(payload.metas)) {
                 const fromServer = payload.metas.find((m) => m._id === locallyUpdated._id);
                 if (fromServer) {
-                    let finalMeta = fromServer;
-                    if (
-                        finalMeta.tipo === "Num" &&
-                        (finalMeta.valorObjetivo === undefined || finalMeta.unidad === undefined)
-                    ) {
-                        finalMeta = {
-                            ...finalMeta,
-                            valorObjetivo: finalMeta.valorObjetivo ?? locallyUpdated.valorObjetivo,
-                            unidad: finalMeta.unidad ?? locallyUpdated.unidad,
-                        };
-                    }
-                    upsertGoal(finalMeta);
-                    syncSelected(finalMeta);
+                    upsertGoal(fromServer);
+                    syncSelected(fromServer);
                 }
             }
         } catch (e) {
             setError(apiError(e, "No se pudo actualizar la meta."));
         }
     };
+
+    // ── Comparadores para ordenación ─────────────────────────────
+    const startMillis = (g) => {
+        const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
+        return d ? new Date(d).getTime() : 0;
+    };
+
+    const periodDays = (g) => {
+        const u = String(g.duracionUnidad || "").toLowerCase();
+        if (u.startsWith("indef")) return Infinity;
+        const n = Number(g.duracionValor) || 0;
+        const mul =
+            u.startsWith("día") || u.startsWith("dia")
+                ? 1
+                : u.startsWith("sem")
+                    ? 7
+                    : u.startsWith("mes")
+                        ? 30
+                        : u.startsWith("año") || u.startsWith("ano")
+                            ? 365
+                            : 0;
+        return n * mul;
+    };
+
+    const iconFor = (key) => (sortKey !== key ? "⇅" : sortDir === "asc" ? "▲" : "▼");
+
+    // Ordenación memorizada
+    const goalsSorted = useMemo(() => {
+        const arr = [...goals];
+        if (!sortKey) return arr;
+
+        arr.sort((a, b) => {
+            if (sortKey === "nombre") {
+                const res = (a.nombre || "").localeCompare(b.nombre || "", "es", {
+                    sensitivity: "base",
+                });
+                return sortDir === "asc" ? res : -res;
+            }
+            if (sortKey === "fecha") {
+                const res = startMillis(a) - startMillis(b);
+                return sortDir === "asc" ? res : -res;
+            }
+            if (sortKey === "periodo") {
+                const da = periodDays(a);
+                const db = periodDays(b);
+                const res = da - db; // Infinity al final en asc
+                return sortDir === "asc" ? res : -res; // en desc, Infinity (indef) arriba
+            }
+            return 0;
+        });
+
+        return arr;
+    }, [goals, sortKey, sortDir]);
+
+    // Selección por defecto: primera meta visible
+    useEffect(() => {
+        if (selectedGoal || goalsSorted.length === 0) return;
+        const first = goalsSorted[0];
+        setSelectedGoal(first);
+        ensureGoalDetail(first); // traer registros si no están
+    }, [goalsSorted, selectedGoal, ensureGoalDetail]);
 
     if (loading) return <p className="dashboard-loading">Cargando…</p>;
 
@@ -486,7 +519,6 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            {/* tablero y resto de layout que ya tenías */}
             <div className="board">
                 <div className="left-pane card">
                     <div className="goals-scroll">
@@ -494,15 +526,37 @@ export default function Dashboard() {
                             <table className="goals-table">
                                 <thead>
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Fecha de inicio</th>
-                                    <th>Periodo</th>
+                                    <th
+                                        className={`sortable-th ${sortKey === "nombre" ? "active" : ""}`}
+                                        onClick={() => toggleSort("nombre")}
+                                        aria-sort={ariaSort("nombre")}
+                                        title="Ordenar por nombre"
+                                    >
+                                        Nombre <span className="sort-icons">{iconFor("nombre")}</span>
+                                    </th>
+                                    <th
+                                        className={`sortable-th ${sortKey === "fecha" ? "active" : ""}`}
+                                        onClick={() => toggleSort("fecha")}
+                                        aria-sort={ariaSort("fecha")}
+                                        title="Ordenar por fecha de inicio"
+                                    >
+                                        Fecha de inicio{" "}
+                                        <span className="sort-icons">{iconFor("fecha")}</span>
+                                    </th>
+                                    <th
+                                        className={`sortable-th ${sortKey === "periodo" ? "active" : ""}`}
+                                        onClick={() => toggleSort("periodo")}
+                                        aria-sort={ariaSort("periodo")}
+                                        title="Ordenar por periodo"
+                                    >
+                                        Periodo <span className="sort-icons">{iconFor("periodo")}</span>
+                                    </th>
                                     <th>Objetivo</th>
                                     <th>Acciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {goals.map((g) => (
+                                {goalsSorted.map((g) => (
                                     <GoalRow
                                         key={g._id}
                                         goal={g}
@@ -536,15 +590,18 @@ export default function Dashboard() {
                         {stats ? (
                             <div className="stats-content">
                                 <p>
-                                    Total<br />
+                                    Total
+                                    <br />
                                     <strong>{stats.totalMetas}</strong>
                                 </p>
                                 <p>
-                                    Finalizadas<br />
+                                    Finalizadas
+                                    <br />
                                     <strong>{stats.totalMetasFinalizadas}</strong>
                                 </p>
                                 <p style={{ gridColumn: "1 / -1" }}>
-                                    Porcentaje finalizadas: <strong>{stats.porcentajeFinalizadas}%</strong>
+                                    Porcentaje finalizadas:{" "}
+                                    <strong>{stats.porcentajeFinalizadas}%</strong>
                                 </p>
                             </div>
                         ) : (
@@ -558,7 +615,6 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* usa tu NewGoalModal tal cual; no pasamos props nuevas */}
             <NewGoalModal
                 open={openNew}
                 onClose={() => setOpenNew(false)}
