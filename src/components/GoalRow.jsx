@@ -5,8 +5,8 @@ import "../index.css";
 
 export default function GoalRow({
                                     goal,
-                                    createdLabel,   // ← NUEVO: (goal) => string
-                                    objectiveLabel, // ya existente
+                                    createdLabel,
+                                    objectiveLabel,
                                     onSelect,
                                     onEntry,
                                     onFinalize,
@@ -20,7 +20,6 @@ export default function GoalRow({
         >
             <td className="goal-cell">{goal.nombre}</td>
 
-            {/* NUEVA COLUMNA: Fecha de creación */}
             <td className="goal-cell">{createdLabel(goal)}</td>
 
             <td className="goal-cell">
@@ -34,10 +33,8 @@ export default function GoalRow({
             <td className="goal-cell" style={{ display: "flex", gap: ".4rem" }}>
                 {!goal.finalizado && (
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEntry(goal);
-                        }}
+                        className="btn btn--primary btn--sm"
+                        onClick={(e) => { e.stopPropagation(); onEntry(goal); }}
                     >
                         Entrada
                     </button>
@@ -47,10 +44,8 @@ export default function GoalRow({
                     <>
                         <span style={{ color: "green", fontWeight: 600 }}>COMPLETADA</span>
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(goal._id);
-                            }}
+                            className="btn btn--danger btn--sm"
+                            onClick={(e) => { e.stopPropagation(); onDelete(goal._id); }}
                         >
                             Eliminar
                         </button>
@@ -58,26 +53,20 @@ export default function GoalRow({
                 ) : (
                     <>
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onFinalize(goal._id);
-                            }}
+                            className="btn btn--warn btn--sm"
+                            onClick={(e) => { e.stopPropagation(); onFinalize(goal._id); }}
                         >
                             Finalizar
                         </button>
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(goal);
-                            }}
+                            className="btn btn--muted btn--sm"
+                            onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
                         >
                             Editar
                         </button>
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(goal._id);
-                            }}
+                            className="btn btn--danger btn--sm"
+                            onClick={(e) => { e.stopPropagation(); onDelete(goal._id); }}
                         >
                             Eliminar
                         </button>
