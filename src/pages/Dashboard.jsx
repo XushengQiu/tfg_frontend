@@ -1,7 +1,7 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Dashboard.jsx
 // ───────────────────────────────────────────────────────────────
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
 
@@ -73,18 +73,12 @@ export default function Dashboard() {
     const [sortDir, setSortDir] = useState("asc");    // 'asc' | 'desc'
 
     const toggleSort = (key) => {
-        setSortKey((prevKey) => {
-            if (prevKey === key) {
-                // misma columna → alterna dirección
-                setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-                return prevKey;
-            } else {
-                // columna distinta → empieza asc
-                setSortDir("asc");
-                return key;
-            }
-        });
+        setSortDir((prevDir) =>
+            sortKey === key ? (prevDir === "asc" ? "desc" : "asc") : "asc"
+        );
+        setSortKey(key);
     };
+
 
     const ariaSort = (key) =>
         sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
@@ -160,13 +154,17 @@ export default function Dashboard() {
         [upsertGoal, syncSelected]
     );
 
+    const fmtDateOnly = (d) => {
+        const date = Array.isArray(d) ? d[0] : d;
+        if (!date) return "-";
+        const obj = new Date(date);
+        return obj.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    };
+
     const objectiveLabel = (g) =>
         g.tipo === "Bool" ? "Boolean" : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
 
-    const createdLabel = (g) => {
-        const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
-        return d ? fmtFecha(d) : "-";
-    };
+    const createdLabel = (g) => fmtDateOnly(g.fecha);
 
     /* -------------------- CREAR META -------------------- */
     const handleCreateGoal = async (form) => {
@@ -480,12 +478,15 @@ export default function Dashboard() {
         return arr;
     }, [goals, sortKey, sortDir]);
 
-    // Selección por defecto: primera meta visible
+    // Selección por defecto: primera meta visible (solo una vez al entrar)
+    const didAutoSelectRef = useRef(false);
     useEffect(() => {
+        if (didAutoSelectRef.current) return;
         if (selectedGoal || goalsSorted.length === 0) return;
         const first = goalsSorted[0];
         setSelectedGoal(first);
         ensureGoalDetail(first); // traer registros si no están
+        didAutoSelectRef.current = true;
     }, [goalsSorted, selectedGoal, ensureGoalDetail]);
 
     if (loading) return <p className="dashboard-loading">Cargando…</p>;
@@ -557,20 +558,28 @@ export default function Dashboard() {
                                 </thead>
                                 <tbody>
                                 {goalsSorted.map((g) => (
+                                    // dentro del map de goalsSorted en Dashboard.jsx
                                     <GoalRow
                                         key={g._id}
                                         goal={g}
                                         createdLabel={createdLabel}
                                         objectiveLabel={objectiveLabel}
                                         onSelect={(goal) => {
-                                            setSelectedGoal((cur) => (cur?._id === goal._id ? null : goal));
-                                            ensureGoalDetail(goal);
+                                            setSelectedGoal((cur) => {
+                                                const next = cur?._id === goal._id ? null : goal; // toggle
+                                                if (next) {
+                                                    // solo si realmente seleccionamos una meta
+                                                    ensureGoalDetail(next);
+                                                }
+                                                return next;
+                                            });
                                         }}
                                         onEntry={(goal) => setEntryGoal(goal)}
                                         onFinalize={handleFinalize}
                                         onEdit={(goal) => openEditModal(goal)}
                                         onDelete={handleDelete}
                                     />
+
                                 ))}
                                 </tbody>
                             </table>
