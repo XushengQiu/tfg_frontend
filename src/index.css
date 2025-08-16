@@ -205,3 +205,35 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .btn--muted:hover{ background:#d6d6d6; }
 .btn--danger{ background:#e74c3c; color:#fff; }
 .btn--danger:hover{ background:#cf4436; }
+
+/* --- Toast felicitación primer registro (abajo-derecha) --- */
+.toast{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background:#fff;
+  border:1px solid #e0e0e0;
+  border-left:4px solid #2e7d32;   /* verde suave de éxito */
+  border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+  display:flex;
+  align-items:flex-start;
+  gap:.75rem;
+  padding:.75rem .9rem;
+  max-width:min(92vw, 360px);
+  opacity:0;
+  transform: translateY(8px);
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 998; /* por debajo de tus modales (999) */
+}
+.toast.show{ opacity:1; transform:none; }
+.toast-icon{ font-size:1.35rem; line-height:1; }
+.toast-body{ display:flex; flex-direction:column; gap:.2rem; }
+.toast-title{ font-weight:700; }
+.toast-text{ color:#444; }
+.toast-close{
+  margin-left:auto;
+  border:none; background:transparent; cursor:pointer;
+  font-size:1.15rem; line-height:1; opacity:.6;
+}
+.toast-close:hover{ opacity:1; }
