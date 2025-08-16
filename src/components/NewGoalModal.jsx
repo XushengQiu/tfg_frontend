@@ -1,10 +1,19 @@
 // src/components/NewGoalModal.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 
 const todayISO = () => {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+const isIntIn = (v, a, b) => Number.isInteger(v) && v >= a && v <= b;
+const isDecimal2In = (s, a, b) => {
+    if (s === "" || s == null) return false;
+    const txt = String(s).trim();
+    if (!/^\d{1,13}(\.\d{1,2})?$/.test(txt)) return false;
+    const n = Number(txt);
+    return !Number.isNaN(n) && n >= a && n <= b;
 };
 
 export default function NewGoalModal({ open, onClose, onCreate }) {
@@ -17,12 +26,9 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
     const [objetivoUnidad, setObjetivoUnidad] = useState("");
     const [isBool, setIsBool] = useState(false);
 
-    // ← fecha por defecto: HOY
     const [fechaInicio, setFechaInicio] = useState(todayISO());
-
     const [descripcion, setDescripcion] = useState("");
 
-    // Resetear al cerrar, dejando fecha en HOY
     useEffect(() => {
         if (!open) {
             setNombre("");
@@ -32,16 +38,25 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
             setObjetivoNum("");
             setObjetivoUnidad("");
             setIsBool(false);
-            setFechaInicio(todayISO()); // ← vuelve a hoy cuando se cierra
+            setFechaInicio(todayISO());
             setDescripcion("");
         }
     }, [open]);
 
-    const canSubmit =
-        nombre.trim().length > 0 &&
-        fechaInicio && // ya viene con hoy por defecto
-        (periodoIndef || (!!periodoNum && Number(periodoNum) > 0)) &&
-        (isBool || (!!objetivoNum && Number(objetivoNum) > 0 && objetivoUnidad.trim().length > 0));
+    const canSubmit = useMemo(() => {
+        const nameOk = nombre.trim().length >= 1 && nombre.trim().length <= 50;
+        const descrOk = (descripcion || "").trim().length <= 300;
+        const periodoOk =
+            periodoIndef ||
+            (String(periodoNum).trim() !== "" &&
+                isIntIn(Number(periodoNum), 1, 10000));
+        const objetivoOk =
+            isBool || isDecimal2In(objetivoNum, 0.01, 9999999999999.99);
+        const unidadOk =
+            isBool ||
+            (objetivoUnidad.trim().length >= 1 && objetivoUnidad.trim().length <= 20);
+        return nameOk && descrOk && periodoOk && objetivoOk && unidadOk && !!fechaInicio;
+    }, [nombre, descripcion, periodoIndef, periodoNum, isBool, objetivoNum, objetivoUnidad, fechaInicio]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -50,7 +65,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
         onCreate({
             tipo: isBool ? "bool" : "num",
             nombre: nombre.trim(),
-            descripcion: descripcion.trim(),
+            descripcion: (descripcion || "").trim(),
             fechaInicio,
             periodoIndef,
             periodoNum,
@@ -78,6 +93,8 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                             value={nombre}
                             onChange={(e) => setNombre(e.target.value)}
                             required
+                            minLength={1}
+                            maxLength={50}
                         />
                     </label>
 
@@ -89,9 +106,12 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                 className="short"
                                 type="number"
                                 min="1"
+                                max="10000"
+                                step="1"
                                 value={periodoNum}
                                 onChange={(e) => setPeriodoNum(e.target.value)}
                                 disabled={periodoIndef}
+                                required={!periodoIndef}
                             />
                             <select
                                 className="medium"
@@ -122,9 +142,14 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                         <div className={`field-group ${isBool ? "group-disabled" : ""}`}>
                             <input
                                 type="number"
+                                inputMode="decimal"
+                                step="0.01"
+                                min="0.01"
+                                max="9999999999999.99"
                                 value={objetivoNum}
                                 onChange={(e) => setObjetivoNum(e.target.value)}
                                 disabled={isBool}
+                                required={!isBool}
                             />
                             <input
                                 type="text"
@@ -132,6 +157,9 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                 value={objetivoUnidad}
                                 onChange={(e) => setObjetivoUnidad(e.target.value)}
                                 disabled={isBool}
+                                minLength={1}
+                                maxLength={20}
+                                required={!isBool}
                             />
                             <label className="inline-check">
                                 <input
@@ -144,7 +172,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                         </div>
                     </label>
 
-                    {/* Fecha de inicio (pre-cargada a HOY) */}
+                    {/* Fecha de inicio */}
                     <label>
                         Fecha inicio:
                         <input
@@ -162,6 +190,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                             rows="4"
                             value={descripcion}
                             onChange={(e) => setDescripcion(e.target.value)}
+                            maxLength={300}
                         />
                     </label>
 

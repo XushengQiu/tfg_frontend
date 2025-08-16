@@ -4,6 +4,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
+import { capitalize as cap, fmtFecha } from "../utils/format";
 
 import {
     getProfile,
@@ -25,7 +26,6 @@ import EditGoalModal from "../components/EditGoalModal";
 import GoalRow from "../components/GoalRow";
 import GoalDetail from "../components/GoalDetail";
 import GoalInsight from "../components/GoalInsight";
-import { capitalize as cap, fmtFecha } from "../utils/format";
 
 import "../index.css";
 
@@ -299,6 +299,14 @@ export default function Dashboard() {
     };
 
     /* -------------------- GUARDAR REGISTRO -------------------- */
+    // ——— NUEVO: estado del TOAST (felicitación primer registro) ———
+    const [toast, setToast] = useState(null); // { goalName: string } | null
+    useEffect(() => {
+        if (!toast) return;
+        const id = setTimeout(() => setToast(null), 6000);
+        return () => clearTimeout(id);
+    }, [toast]);
+
     const handleSaveEntry = async (data) => {
         if (!entryGoal) return;
 
@@ -354,9 +362,17 @@ export default function Dashboard() {
                 finalMeta = mergeRecordIntoMeta(base, newReg);
             }
 
+            // ——— NUEVO: si queda con exactamente 1 registro → mostrar toast ———
+            const isFirstEver =
+                Array.isArray(finalMeta?.registros) && Number(finalMeta.registros.length) === 1;
+
             setGoals((curr) => curr.map((g) => (g._id === finalMeta._id ? finalMeta : g)));
             setSelectedGoal((sel) => (sel && sel._id === finalMeta._id ? finalMeta : sel));
             setEntryGoal(null);
+
+            if (isFirstEver) {
+                setToast({ goalName: finalMeta.nombre || "tu meta" });
+            }
         } catch (e) {
             setError(apiError(e, "No se pudo crear el registro."));
         }
@@ -652,6 +668,26 @@ export default function Dashboard() {
                             Volver
                         </button>
                     </div>
+                </div>
+            )}
+
+            {/* ——— NUEVO: toast felicitación (abajo-derecha) ——— */}
+            {toast && (
+                <div className="toast show" role="status" aria-live="polite">
+                    <div className="toast-icon" aria-hidden="true">🎉</div>
+                    <div className="toast-body">
+                        <div className="toast-title">¡Primer registro!</div>
+                        <div className="toast-text">
+                            Has añadido tu primer registro en “{toast.goalName}”. ¡Buen comienzo!
+                        </div>
+                    </div>
+                    <button
+                        className="toast-close"
+                        onClick={() => setToast(null)}
+                        aria-label="Cerrar notificación"
+                    >
+                        ×
+                    </button>
                 </div>
             )}
         </div>

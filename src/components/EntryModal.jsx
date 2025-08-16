@@ -27,7 +27,6 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
             setData({ fecha: start, valorBool: null, valorNum: "" });
         }
         if (!open) {
-            // al cerrar, deja el estado "limpio"
             setData({ fecha: getTodayISO(), valorBool: null, valorNum: "" });
         }
     }, [open, goal]);
@@ -88,9 +87,10 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                             <div style={{ display: "flex", alignItems: "center", gap: ".4rem", marginTop: ".4rem" }}>
                                 <input
                                     type="number"
-                                    step="any"          // << permitir decimales, spinner sigue a saltos de 1
-                                    min="0"
-                                    inputMode="decimal" // << opcional, mejor UX en móvil
+                                    inputMode="decimal"
+                                    step="0.01"
+                                    min="0.01"
+                                    max="9999999999999.99"
                                     required
                                     className="short"
                                     value={data.valorNum}
@@ -107,7 +107,7 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                             type="date"
                             className="fecha-input"
                             value={data.fecha}
-                            min={minDate}                // ← ¡restricción aquí!
+                            min={minDate}
                             onChange={(e) => setData({ ...data, fecha: e.target.value })}
                         />
                     </label>

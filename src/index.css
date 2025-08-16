@@ -1,14 +1,13 @@
 /* ───────── Base ───────── */
+html,body,#root{ height:100%; }
 body{
   margin:0;
+  overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
 code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace; }
-
-html,body,#root{ height:100%; }
-body{ overflow:hidden; }
 
 /* ───────── Perfil ───────── */
 .profile-wrapper{ display:flex; flex-direction:column; min-height:100vh; background:#812f7f; color:#fff; }
@@ -20,15 +19,12 @@ body{ overflow:hidden; }
 .logout-btn{ background:#888; color:#fff; }
 .delete-btn{ background:#c55757; color:#fff; }
 .back-btn{ background:#d5975d; color:#fff; }
+.delete-btn:disabled{ opacity:.45; cursor:not-allowed; filter:saturate(.7); }
 
 /* ───────── Modal genérico ───────── */
-.modal-overlay{
-  position:fixed; inset:0; background:rgba(0,0,0,.6);
-  display:flex; align-items:center; justify-content:center; z-index:999;
-}
+.modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:999; }
 .modal{
-  position:relative;
-  background:#fff; color:#000; padding:2rem 2.5rem;
+  position:relative; background:#fff; color:#000; padding:2rem 2.5rem;
   border-radius:8px; max-width:500px; width:90%; text-align:left;
 }
 .modal h2{ margin:0 0 1rem 0; }
@@ -41,63 +37,50 @@ body{ overflow:hidden; }
   width:100%; padding:.5rem; margin-top:.25rem; font-size:1rem;
   border:1px solid #ccc; border-radius:4px; box-sizing:border-box;
 }
+.modal textarea{ resize:vertical; max-width:100%; }
 .modal-actions{ display:flex; gap:1.5rem; justify-content:center; margin-top:1.5rem; }
-.modal-close{
-  position:absolute; top:10px; right:12px; border:none; background:transparent;
-  font-size:1.5rem; line-height:1; cursor:pointer; opacity:.6;
-}
+.modal-close{ position:absolute; top:10px; right:12px; border:none; background:transparent; font-size:1.5rem; line-height:1; cursor:pointer; opacity:.6; }
 .modal-close:hover{ opacity:1; }
 
-/* Links con aspecto de enlace (por accesibilidad en Login) */
-.linklike{
-  background:none; border:none; padding:0; font:inherit;
-  text-decoration:underline; cursor:pointer; color:#1a73e8;
-}
+/* Links aspecto enlace (Login) */
+.linklike{ background:none; border:none; padding:0; font:inherit; text-decoration:underline; cursor:pointer; color:#1a73e8; }
 .linklike:focus-visible{ outline:2px solid #1a73e8; outline-offset:2px; }
 
-/* Botones legales flotantes en Profile */
-.legal-fabs{
-  position:fixed; right:16px; bottom:16px;
-  display:flex; flex-direction:column; gap:8px; z-index:998;
-}
-.legal-fab{
-  padding:.5rem .9rem; border-radius:999px; border:1px solid #ccc;
-  background:#fff; color:#333; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.15); font-size:.9rem;
-}
+/* FABs legales en Profile */
+.legal-fabs{ position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:998; }
+.legal-fab{ padding:.5rem .9rem; border-radius:999px; border:1px solid #ccc; background:#fff; color:#333; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.15); font-size:.9rem; }
 .legal-fab:hover{ background:#f7f7f7; }
 
 /* Pie legal en Login */
 .login-legal{ margin-top:auto; padding:1rem 0 2rem; font-size:.85rem; color:#666; text-align:center; }
 
-/* ───────── Dashboard (layout 70/30 sin scroll global) ───────── */
-.dashboard-wrapper{
-  height:100%; min-height:100vh;
-  display:flex; flex-direction:column; gap:1.5rem;
-  padding-top:.5rem; padding-bottom:1rem; /* subir un poco y dar colchón abajo */
+/* ───────── Dashboard (layout) ───────── */
+.dashboard-wrapper{ height:100%; min-height:100vh; display:flex; flex-direction:column; gap:1rem; padding-top:.5rem; padding-bottom:1rem; }
+.dashboard-header{ flex:0 0 auto; display:flex; justify-content:space-between; align-items:center; padding-block:.30rem; }
+.dashboard-title{ font-size:2rem; font-weight:700; margin:.20rem 0 .20rem 28px; line-height:1.1; }
+.dashboard-header-right{ display:flex; gap:1rem; align-items:center; margin-right:28px; }
+.create-goal-btn{
+  display:flex; gap:.5rem; align-items:center;
+  padding:.55rem 1rem; border-radius:999px; border:none; font-weight:600;
+  background:#1a73e8; color:#fff; box-shadow:0 2px 8px rgba(26,115,232,.20);
+  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
 }
-.dashboard-header{ flex:0 0 auto; display:flex; justify-content:space-between; align-items:center; }
-.dashboard-title{ font-size:2rem; font-weight:700; }
-.dashboard-header-right{ display:flex; gap:1rem; align-items:center; }
-.create-goal-btn{ display:flex; gap:.5rem; align-items:center; }
+.create-goal-btn:hover{ background:#1669c1; box-shadow:0 4px 12px rgba(26,115,232,.28); }
+.create-goal-btn:active{ transform:translateY(1px); }
+.create-goal-btn:focus-visible{ outline:2px solid #1a73e8; outline-offset:2px; }
 .icon{ width:1.2rem; height:1.2rem; }
 .avatar-btn{ width:40px; height:40px; border:1px solid #ccc; border-radius:50%; overflow:hidden; padding:0; }
 .avatar-img{ width:100%; height:100%; object-fit:cover; }
 
-/* Tablero principal */
-.board{
-  flex:1 1 auto; min-height:0;
-  display:grid; grid-template-columns:7fr 5fr; gap:1.25rem;
-  margin-top:.25rem; padding-bottom:.5rem; box-sizing:border-box;
-}
-
-/* Pane izquierdo (lista + detalle) con alturas fijas y scroll interno */
-.left-pane{ display:grid; grid-template-rows:minmax(0,50%) minmax(0,50%); min-height:0; }
+/* Tablero 70/30 */
+.board{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:7fr 5fr; gap:1.25rem; margin-top:.25rem; padding-bottom:.5rem; box-sizing:border-box; }
+.left-pane{ display:grid; grid-template-rows:minmax(0,49%) minmax(0,51%); min-height:0; }
 .right-pane{ display:flex; flex-direction:column; gap:1rem; min-height:0; }
 
 /* Cards */
 .card{ background:#fff; border-radius:12px; padding:1rem 1.25rem; box-shadow:0 2px 10px rgba(0,0,0,.04); }
 
-/* Lista de metas (scroll solo aquí) */
+/* Lista de metas */
 .goals-scroll{ overflow:auto; min-height:0; }
 .goals-table{ width:100%; border-collapse:collapse; font-size:.95rem; }
 .goals-table-wrapper{ overflow:visible; }
@@ -107,8 +90,8 @@ body{ overflow:hidden; }
 .goal-row-finalizada{ background:#dcdcdc; }
 .goal-cell{ padding:.5rem; border-bottom:1px solid #ccc; }
 
-/* Detalle (registros + descripción) ocupa el resto y scrollea si hace falta */
-.goal-detail{ overflow:auto; min-height:0; display:flex; gap:2rem; margin-top:1.5rem; }
+/* Detalle (registros + descripción) */
+.goal-detail{ overflow:hidden; min-height:0; display:flex; gap:2rem; margin-top:1.5rem; }
 .goal-registros,.goal-descripcion{ flex:1; }
 
 /* Placeholders */
@@ -117,371 +100,140 @@ body{ overflow:hidden; }
   display:flex; justify-content:center; align-items:center; color:#666; font-size:.9rem;
 }
 
-/* Stats a la derecha y caja en blanco que llena el hueco */
+/* Stats derecha */
+.user-stats{ flex:0 0 auto; background:#f8f8f8; border-radius:10px; }
 .stats-content{ display:grid; grid-template-columns:repeat(2,1fr); text-align:center; gap:1rem; }
 .stats-content p{ color:#666; margin:0; }
 .stats-content strong{ font-size:1.25rem; }
-.user-stats{ flex:0 0 auto; background:#f8f8f8; border-radius:10px; }
 .placeholder{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; }
 .placeholder-inner{ color:#777; }
 
-/* Utilidades de formularios */
+/* Utilidades formularios */
 .fecha-wrapper{ position:relative; display:flex; align-items:center; }
 .calendar-icon{ position:absolute; left:.5rem; width:1rem; height:1rem; color:#777; }
 .fecha-input{ padding-left:2rem; }
 .short{ width:80px; }
 .medium{ width:130px; }
 .dashboard-loading{ padding:1.5rem; font-size:1.1rem; }
-
-/* Atenuar grupos deshabilitados en modales (Indefinido/Boolean) */
 .field-group{ display:flex; align-items:center; gap:8px; }
 .inline-check{ margin-left:8px; display:flex; align-items:center; gap:6px; white-space:nowrap; }
 .group-disabled{ opacity:.5; }
 .field-group input:disabled,.field-group select:disabled{ background:#f7f7f7; cursor:not-allowed; }
 
-.delete-btn:disabled{
-  opacity: .45;              /* aspecto "transparente" para el botón de eliminar cuenta */
-  cursor: not-allowed;
-  filter: saturate(.7);
+/* Cabeceras sticky */
+.goals-scroll .goals-table thead th{
+  position:sticky; top:0; background:#fff; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.08);
+}
+.goal-registros table{ width:100%; border-collapse:collapse; }
+.goal-registros table thead th{
+  position:sticky; top:0; background:#fff; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.08);
 }
 
-/* Evita scroll en el contenedor de detalle */
-.goal-detail{
-  overflow: hidden !important;   /* antes estaba en auto */
-}
+/* Registros: sin scroll exterior (scroll va en el wrapper interno inline) */
+.goal-registros{ overflow:visible !important; max-height:none !important; }
 
-/* La tabla/lista de registros ahora es más bajita y scrollea dentro */
-.goal-registros{
-  max-height: 230px;             /* ajusta a tu gusto: 200–260px suele quedar bien */
-  overflow: auto;                 /* scroll solo aquí */
-  min-height: 0;                  /* para que el flex no fuerce crecimiento */
-}
+/* Ordenación tabla metas */
+.sortable-th{ cursor:pointer; user-select:none; white-space:nowrap; }
+.sortable-th .sort-icons{ margin-left:6px; font-size:.85em; color:#777; }
+.sortable-th.active .sort-icons{ color:#333; }
 
-/* La descripción puede crecer y, si es necesario, scrollear internamente */
-.goal-descripcion{
-  overflow: auto;
-  min-height: 0;
-}
-
-/* Solo separaciones internas del header (no cambia su tamaño/posición) */
-h1.dashboard-title{
-  margin-left: 28px;     /* empuja el título un poco a la derecha */
-}
-
-.dashboard-header-right{
-  margin-right: 28px;    /* empuja el bloque de la derecha un poco a la izquierda */
-}
-
-/* ====== Visualizaciones en placeholder (derecha) ====== */
+/* ====== Insights (derecha) ====== */
 .insight-container{ width:100%; }
 .insight-empty{ color:#777; text-align:center; }
-
 .insight-block{ width:100%; }
-.insight-title{
-  font-weight:600;
-  margin-bottom:.5rem;
-  display:flex; align-items:baseline; gap:.5rem;
-}
+.insight-title{ font-weight:600; margin-bottom:.5rem; display:flex; align-items:baseline; gap:.5rem; }
 .insight-title .muted{ color:#777; font-weight:400; }
+.insight-title.bump-up{ margin-top:-8px; }
 
-/* Gráfico numérico */
 .insight-svg{ width:100%; height:auto; display:block; }
+.insight-svg.bump-up{ margin-top:-6px; }
 .tick{ fill:#666; font-size:.8rem; }
 .legend{ fill:#4a4a4a; font-size:.8rem; }
 
+.insight-target-line{ stroke:#7a9cff; }
+.insight-hover-line{ stroke:#90caf9; stroke-width:1.5; stroke-dasharray:4 4; }
+.insight-hover-dot{ fill:#2e7d32; stroke:#fff; stroke-width:2; }
+.insight-tooltip text{ font-size:.82rem; fill:#222; }
+.insight-tooltip-bg{ fill:#fff; stroke:#cfd8dc; }
+
 /* Calendario booleano */
-.calendar-legend{
-  display:flex; gap:12px; align-items:center; color:#666; font-size:.9rem;
-  margin-bottom:.5rem;
-}
-.calendar-legend .dot{
-  width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px;
-  background:#d0d0d0;
-}
+.calendar-legend{ display:flex; gap:12px; align-items:center; color:#666; font-size:.9rem; margin-bottom:.5rem; }
+.calendar-legend .dot{ width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px; background:#d0d0d0; }
 .calendar-legend .dot.ok{ background:#2e7d32; }
 .calendar-legend .dot.ko{ background:#c62828; }
 .calendar-legend .dot.none{ background:#d0d0d0; }
-
-.calendar-grid{
-  display:grid;
-  grid-template-columns: repeat(7, minmax(0,1fr));
-  gap:6px;
-}
-.cal-head{
-  text-align:center; font-weight:600; color:#666; font-size:.85rem; margin-bottom:2px;
-}
+.calendar-grid{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; }
+.cal-head{ text-align:center; font-weight:600; color:#666; font-size:.85rem; margin-bottom:2px; }
 .cal-pad{ height:32px; }
-.cal-day{
-  height:32px; border-radius:6px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:.85rem; color:#222; background:#eee;
-}
-.cal-day.ok{ background:#c8e6c9; }   /* verde suave */
-.cal-day.ko{ background:#ffcdd2; }   /* rojo suave */
+.cal-day{ height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:.85rem; color:#222; background:#eee; }
+.cal-day.ok{ background:#c8e6c9; }
+.cal-day.ko{ background:#ffcdd2; }
 .cal-day.none{ background:#eee; color:#888; }
-
-/* --- Fix: quitar el scroll exterior de "Registros" --- */
-.goal-registros{
-  overflow: visible !important;   /* antes auto */
-  max-height: none !important;    /* quitamos el límite para que no scrollee ella */
-}
-/* nos quedamos con el scroll del div interno (inline style en GoalDetail.jsx) */
-
-/* ——— Registros: tamaño un pelín menor y único scroll interno ——— */
-.goal-detail{ overflow: hidden; }           /* el contenedor no scrollea */
-.goal-registros{
-  max-height: 220px;                        /* antes ~230; así no “corta” la barra */
-  overflow: auto;                           /* scroll solo aquí */
-  padding-bottom: 6px;                      /* colchón para que se vea completa */
-  -webkit-overflow-scrolling: touch;        /* suave en móvil */
-  scrollbar-gutter: stable both-edges;      /* evita solapamientos del scrollbar */
-}
-
-/* ——— Cabeceras fijas (sticky) ——— */
-/* Metas (lista de la izquierda) */
-.goals-scroll{ overflow: auto; }
-.goals-scroll .goals-table thead th{
-  position: sticky;
-  top: 0;
-  background: #fff;
-  z-index: 2;
-  box-shadow: 0 1px 0 rgba(0,0,0,.08);      /* línea finita bajo la cabecera */
-}
-
-/* Registros (en el detalle) */
-.goal-registros table{ width: 100%; border-collapse: collapse; }
-.goal-registros table thead th{
-  position: sticky;
-  top: 0;                                   /* siempre visible al hacer scroll */
-  background: #fff;
-  z-index: 2;
-  box-shadow: 0 1px 0 rgba(0,0,0,.08);
-}
-
-/* Si tu tabla de registros usa una clase distinta para la cabecera,
-   déjala cubierta también (no hace daño tener ambos selectores). */
-.goal-registros .registros-table thead th{
-  position: sticky; top: 0; background:#fff; z-index:2;
-  box-shadow: 0 1px 0 rgba(0,0,0,.08);
-}
-
-/* ── Ordenación en tabla de metas ───────────────────────────── */
-.sortable-th{
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-.sortable-th .sort-icons{
-  margin-left: 6px;
-  font-size: .85em;
-  color: #777;
-}
-.sortable-th.active .sort-icons{
-  color: #333;
-}
-
-/* ====== Interacción del gráfico (tooltip/hover) ====== */
-.insight-target-line{ stroke:#7a9cff; }
-
-.insight-hover-line{
-  stroke:#90caf9;
-  stroke-width:1.5;
-  stroke-dasharray:4 4;
-}
-
-.insight-hover-dot{
-  fill:#2e7d32;
-  stroke:#fff;
-  stroke-width:2;
-}
-
-.insight-tooltip text{
-  font-size:.82rem;
-  fill:#222;
-}
-
-.insight-tooltip-bg{
-  fill:#ffffff;
-  stroke:#cfd8dc;
-}
-
-/* === solo lo nuevo/actualizado respecto a tu hoja === */
-
-/* Título un poco más arriba en la tarjeta de insights */
-.insight-title.bump-up{
-  margin-top: -8px;   /* “sube” ligeramente dentro de la card */
-}
-
-/* Grid del calendario (ya lo tienes), añadimos navegación */
-.calendar-nav{
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;   /* centrado bajo el grid (bajo “Jueves”) */
-  gap: 12px;
-}
-.cal-nav-btn{
-  padding: .25rem .75rem;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 6px;
-  font-size: 1.05rem;
-  line-height: 1;
-  cursor: pointer;
-}
+.calendar-nav{ margin-top:10px; display:flex; justify-content:center; gap:12px; }
+.cal-nav-btn{ padding:.25rem .75rem; border:1px solid #ccc; background:#fff; border-radius:6px; font-size:1.05rem; line-height:1; cursor:pointer; }
 .cal-nav-btn:hover{ background:#f6f6f6; }
-.cal-nav-btn:disabled{
-  opacity: .45;
-  cursor: not-allowed;
-}
+.cal-nav-btn:disabled{ opacity:.45; cursor:not-allowed; }
 
-/* Solo permitir redimensionado vertical en los textareas de los modales */
-.modal textarea{
-  resize: vertical;   /* bloquea el estirado horizontal */
-  max-width: 100%;    /* por si el user agent intenta forzar más ancho */
-}
-
-/* ——— subir un poco el SVG del insight numérico ——— */
-.insight-svg.bump-up{
-  margin-top: -6px;   /* “super poco” */
-}
-
-/* ——— filtros bajo la gráfica ——— */
-.insight-filters{
-  margin-top: .5rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0,1fr));
-  gap: .75rem;
-  align-items: end;
-}
-.filter-group{ display:flex; flex-direction:column; gap:.25rem; }
-.filter-label{ font-weight:600; }
-.filter-row{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
-.filter-input, .filter-select{
-  padding:.4rem .5rem; border:1px solid #ccc; border-radius:4px; font-size:.95rem;
-}
-.filter-input.short, .filter-select.short{ width:100px; }
-.filter-select.medium{ width:140px; }
-.filter-sep{ opacity:.6; }
-.filter-clear{
-  padding:.35rem .6rem; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;
-}
-.filter-hint{ color:#777; font-size:.8rem; }
-
-/* ——— filtros bajo la gráfica ——— */
-/* antes: grid-template-columns: repeat(3, 1fr) */
-.insight-filters{
-  margin-top: .5rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); /* más compacto y responsive */
-  gap: .75rem;
-  align-items: end;
-}
-
-.filter-group{
-  display:flex;
-  flex-direction:column;
-  gap:.25rem;
-  cursor: pointer;              /* se percibe que es clicable para activar */
-}
-.filter-group.disabled{
-  opacity:.45;                  /* grupos inactivos atenuados */
-}
-.filter-label{
-  font-weight:600;
-  display:flex; align-items:center; gap:.4rem;
-  user-select:none;
-}
-.filter-row{ display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
-.filter-input, .filter-select{
-  padding:.4rem .5rem; border:1px solid #ccc; border-radius:4px; font-size:.95rem;
-}
-.filter-input.short, .filter-select.short{ width:100px; }
-.filter-select.medium{ width:140px; }
-.filter-sep{ opacity:.6; }
-.filter-clear{
-  padding:.35rem .6rem; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;
-}
-.filter-hint{ color:#777; font-size:.8rem; }
-
-/* Compactar el header sin tocar tamaños del contenido */
-.dashboard-wrapper{
-  gap: 1rem;             /* antes 1.5rem: un pelín menos de separación con el board */
-}
-
-.dashboard-header{
-  padding-block: .30rem; /* “solo un poco” de padding arriba/abajo */
-}
-
-h1.dashboard-title{
-  /* mantenemos el font-size existente (2rem); solo recortamos márgenes verticales */
-  margin: .20rem 0 .20rem 28px;  /* izquierda como ya la tenías, top/bottom más compactos */
-  line-height: 1.1;
-}
-
-/* Botón "Crear meta" más visible */
-.create-goal-btn{
-  padding: .55rem 1rem;        /* un poco más grande */
-  border-radius: 999px;
-  border: none;
-  font-weight: 600;
-  background: #1a73e8;         /* azul sutil, encaja con la UI */
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(26,115,232,.20);
-  transition: transform .04s ease, box-shadow .15s ease, background-color .15s ease;
-}
-.create-goal-btn:hover{ background:#1669c1; box-shadow:0 4px 12px rgba(26,115,232,.28); }
-.create-goal-btn:active{ transform: translateY(1px); }
-.create-goal-btn:focus-visible{ outline:2px solid #1a73e8; outline-offset:2px; }
-
-/* ====== Barra de filtros compacta bajo la gráfica ====== */
-.filterbar{
-  margin-top:.5rem;
-  display:grid;
-  grid-template-columns: 220px 1fr; /* selector izq / controles dcha */
-  gap:1rem;
-  align-items:start;
-}
+/* ====== Barra de filtros compacta (gráfico numérico) ====== */
+.filterbar{ margin-top:.5rem; display:grid; grid-template-columns:220px 1fr; gap:1rem; align-items:start; }
 .filter-chooser-title{ font-weight:700; margin-bottom:.25rem; }
 .radio-line{ display:flex; align-items:center; gap:.5rem; padding:.15rem 0; }
-.radio-line input{ transform: translateY(1px); }
-.filter-controls{ min-height: 60px; display:flex; flex-direction:column; gap:.25rem; }
+.radio-line input{ transform:translateY(1px); }
+.filter-controls{ min-height:60px; display:flex; flex-direction:column; gap:.25rem; }
 
 .filter-row{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
-.filter-input, .filter-select{
-  padding:.45rem .55rem; border:1px solid #ccc; border-radius:6px; font-size:.95rem;
-}
-.filter-input.short, .filter-select.short{ width:100px; }
+.filter-input,.filter-select{ padding:.45rem .55rem; border:1px solid #ccc; border-radius:6px; font-size:.95rem; }
+.filter-input.short,.filter-select.short{ width:100px; }
 .filter-select.medium{ width:140px; }
 .filter-sep{ opacity:.6; }
-.filter-clear{
-  padding:.4rem .7rem; border:1px solid #ccc; background:#fff; border-radius:6px; cursor:pointer;
-}
+.filter-clear{ padding:.4rem .7rem; border:1px solid #ccc; background:#fff; border-radius:6px; cursor:pointer; }
 .filter-hint{ color:#777; font-size:.82rem; }
 
-/* ====== Botones de acciones (colores suaves) ====== */
+/* ====== Botones de acciones (tabla/listas) ====== */
 .btn{
-  padding:.35rem .7rem;
-  border-radius:8px;
-  border:1px solid transparent;
-  font-weight:600;
-  font-size:.9rem;
-  cursor:pointer;
+  padding:.35rem .7rem; border-radius:8px; border:1px solid transparent;
+  font-weight:600; font-size:.9rem; cursor:pointer;
   transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
 }
 .btn--sm{ padding:.32rem .6rem; font-size:.86rem; }
 .btn--xs{ padding:.25rem .5rem; font-size:.8rem; }
-
 .btn--primary{ background:#1a73e8; color:#fff; box-shadow:0 1px 6px rgba(26,115,232,.18); }
 .btn--primary:hover{ background:#1669c1; }
-
 .btn--warn{ background:#f9a825; color:#222; }
 .btn--warn:hover{ background:#f39c12; }
-
 .btn--muted{ background:#e0e0e0; color:#222; }
 .btn--muted:hover{ background:#d6d6d6; }
-
 .btn--danger{ background:#e74c3c; color:#fff; }
 .btn--danger:hover{ background:#cf4436; }
 
-/* ====== Pane izquierdo: un pelín más alto el detalle ====== */
-.left-pane{ grid-template-rows:minmax(0,49%) minmax(0,51%) !important; }
+/* --- Toast felicitación primer registro (abajo-derecha) --- */
+.toast{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background:#fff;
+  border:1px solid #e0e0e0;
+  border-left:4px solid #2e7d32;   /* verde suave de éxito */
+  border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+  display:flex;
+  align-items:flex-start;
+  gap:.75rem;
+  padding:.75rem .9rem;
+  max-width:min(92vw, 360px);
+  opacity:0;
+  transform: translateY(8px);
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 998; /* por debajo de tus modales (999) */
+}
+.toast.show{ opacity:1; transform:none; }
+.toast-icon{ font-size:1.35rem; line-height:1; }
+.toast-body{ display:flex; flex-direction:column; gap:.2rem; }
+.toast-title{ font-weight:700; }
+.toast-text{ color:#444; }
+.toast-close{
+  margin-left:auto;
+  border:none; background:transparent; cursor:pointer;
+  font-size:1.15rem; line-height:1; opacity:.6;
+}
+.toast-close:hover{ opacity:1; }

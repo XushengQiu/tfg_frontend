@@ -45,7 +45,9 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                         <input
                             value={form.nombre}
                             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                            minLength={1}
                             maxLength={50}
+                            required
                         />
                     </label>
 
@@ -55,6 +57,7 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                             rows={3}
                             value={form.descripcion}
                             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                            maxLength={300}
                         />
                     </label>
 
@@ -68,6 +71,9 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                                 required={!form.periodoIndef}
                                 value={form.periodoNum}
                                 onChange={(e) => setForm({ ...form, periodoNum: e.target.value })}
+                                min="1"
+                                max="10000"
+                                step="1"
                             />
                             <select
                                 disabled={form.periodoIndef}
@@ -98,10 +104,13 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                                 Valor objetivo:
                                 <input
                                     type="number"
-                                    step="1"
-                                    min="0"
+                                    inputMode="decimal"
+                                    step="0.01"
+                                    min="0.01"
+                                    max="9999999999999.99"
                                     value={form.objetivoNum}
                                     onChange={(e) => setForm({ ...form, objetivoNum: e.target.value })}
+                                    required
                                 />
                             </label>
 
@@ -110,7 +119,9 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                                 <input
                                     value={form.objetivoUnidad}
                                     onChange={(e) => setForm({ ...form, objetivoUnidad: e.target.value })}
+                                    minLength={1}
                                     maxLength={20}
+                                    required
                                 />
                             </label>
                         </>

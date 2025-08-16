@@ -5,16 +5,104 @@ import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
 
 export default function Login() {
-    const { login } = useAuth();
+    const { login, loginEmail, registerEmail } = useAuth();
     const [openModal, setOpenModal] = useState(null); // 'terms' | 'data' | null
+
+    // email/password
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [busy, setBusy] = useState(false);
+
+    const doEmailLogin = async (e) => {
+        e?.preventDefault();
+        if (!email || !password) return;
+        setBusy(true);
+        try {
+            await loginEmail(email.trim(), password);
+        } catch (err) {
+            alert(err?.message || 'No se pudo iniciar sesión.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const doRegister = async (e) => {
+        e?.preventDefault();
+        if (!email || !password) return;
+        if (password.length < 6) {
+            alert('La contraseña debe tener al menos 6 caracteres (requisito de Firebase).');
+            return;
+        }
+        setBusy(true);
+        try {
+            await registerEmail(email.trim(), password);
+            // → navega a /onboarding donde harás el POST /api/usuarios
+        } catch (err) {
+            alert(err?.message || 'No se pudo crear la cuenta.');
+        } finally {
+            setBusy(false);
+        }
+    };
 
     return (
         <main style={{ minHeight: '100vh', display:'flex', flexDirection:'column', alignItems:'center' }}>
-            <div style={{ marginTop:'4rem' }}>
-                <h1>Bienvenido a GoLife</h1>
-                <button onClick={login} style={{ padding:'0.6rem 1.2rem', marginTop:'1rem' }}>
-                    Iniciar sesión con Google
-                </button>
+            <div style={{ marginTop:'4rem', width:'min(92vw, 420px)' }}>
+                <h1 style={{ textAlign:'center' }}>Bienvenido a GoLife</h1>
+
+                {/* Google */}
+                <div style={{ display:'flex', justifyContent:'center', marginTop:'1rem' }}>
+                    <button onClick={login} style={{ padding:'0.6rem 1.2rem' }}>
+                        Iniciar sesión con Google
+                    </button>
+                </div>
+
+                {/* Divider */}
+                <div style={{ textAlign:'center', margin:'1rem 0', color:'#777' }}>— o —</div>
+
+                {/* Email / Password */}
+                <form onSubmit={doEmailLogin} style={{ display:'grid', gap:'.6rem' }}>
+                    <label>
+                        Correo electrónico
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            style={{ width:'100%', padding:'.5rem', marginTop:'.25rem' }}
+                        />
+                    </label>
+                    <label>
+                        Contraseña
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            minLength={6}
+                            style={{ width:'100%', padding:'.5rem', marginTop:'.25rem' }}
+                        />
+                    </label>
+
+                    <div style={{ display:'flex', gap:'.5rem', justifyContent:'space-between', marginTop:'.3rem' }}>
+                        <button
+                            type="submit"
+                            disabled={busy}
+                            style={{ flex:1, padding:'.55rem 1rem' }}
+                            title="Entrar con email/contraseña"
+                        >
+                            Login
+                        </button>
+                        <button
+                            type="button"
+                            onClick={doRegister}
+                            disabled={busy}
+                            style={{ flex:1, padding:'.55rem 1rem' }}
+                            title="Crear cuenta con email/contraseña"
+                        >
+                            Crear cuenta
+                        </button>
+                    </div>
+                </form>
             </div>
 
             {/* Pie legal */}

@@ -44,7 +44,6 @@ export default function Onboarding() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // empieza siempre mostrando Términos
         setShowTerms(true);
     };
 
@@ -53,33 +52,27 @@ export default function Onboarding() {
         setShowTerms(false);
         setShowData(true);
     };
-    const denyTerms = () => {
-        setShowTerms(false); // vuelve al formulario con los datos intactos
-    };
+    const denyTerms = () => setShowTerms(false);
 
     // --- Tratamiento de datos ---
     const acceptData = async () => {
         setShowData(false);
         setLoading(true);
         try {
-            // apellidos opcional: si viene vacío, mandamos ""
             const payload = {
                 nombre: name.trim(),
-                apellidos: (surname || '').trim(), // "" si no hay apellidos
+                apellidos: (surname || '').trim(),
             };
-
             await createUser(payload);
             navigate('/dashboard', { replace: true });
         } catch (err) {
             alert(apiError(err, "No se pudo crear el usuario."));
-            navigate('/login', { replace: true }); // se mantiene tu flujo actual
+            navigate('/login', { replace: true });
         } finally {
             setLoading(false);
         }
     };
-    const denyData = () => {
-        setShowData(false); // vuelve al formulario
-    };
+    const denyData = () => setShowData(false);
 
     return (
         <>
@@ -92,6 +85,8 @@ export default function Onboarding() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        minLength={2}
+                        maxLength={50}
                     />
                 </label>
 
@@ -103,6 +98,7 @@ export default function Onboarding() {
                         value={surname}
                         onChange={(e) => setSurname(e.target.value)}
                         placeholder="(opcional)"
+                        maxLength={50}
                     />
                 </label>
 
@@ -113,7 +109,6 @@ export default function Onboarding() {
                 </button>
             </form>
 
-            {/* Modal 1: Términos (requiere scroll para habilitar Aceptar) */}
             <Modal
                 open={showTerms}
                 title="Términos y condiciones"
@@ -122,12 +117,11 @@ export default function Onboarding() {
                 acceptText="Aceptar"
                 denyText="Denegar"
                 requireScroll
-                showCloseIcon={false}   // en Onboarding no mostramos la X
+                showCloseIcon={false}
             >
                 <TermsContent />
             </Modal>
 
-            {/* Modal 2: Tratamiento de datos (requiere scroll para habilitar Aceptar) */}
             <Modal
                 open={showData}
                 title="Tratamiento de datos"
