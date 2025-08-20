@@ -61,7 +61,7 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                 <form onSubmit={submit}>
                     {goal.tipo === "Bool" ? (
                         <label style={{ display: "block", marginBottom: "1rem" }}>
-                            Valor*:
+                            ¿Has completado tú objetivo?
                             <div style={{ display: "flex", gap: "1rem", marginTop: ".4rem" }}>
                                 <label>
                                     <input
@@ -69,7 +69,7 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                                         checked={data.valorBool === true}
                                         onChange={() => setData({ ...data, valorBool: true })}
                                     />{" "}
-                                    True
+                                    Sí
                                 </label>
                                 <label>
                                     <input
@@ -77,7 +77,7 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                                         checked={data.valorBool === false}
                                         onChange={() => setData({ ...data, valorBool: false })}
                                     />{" "}
-                                    False
+                                    No
                                 </label>
                             </div>
                         </label>

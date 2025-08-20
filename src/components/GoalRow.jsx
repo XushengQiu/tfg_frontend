@@ -5,6 +5,7 @@ import "../index.css";
 
 export default function GoalRow({
                                     goal,
+                                    selected = false,        // ← marcar fila activa (se pinta en gris)
                                     createdLabel,
                                     objectiveLabel,
                                     onSelect,
@@ -15,7 +16,7 @@ export default function GoalRow({
                                 }) {
     return (
         <tr
-            className={`goal-row ${goal.finalizado ? "goal-row-finalizada" : ""}`}
+            className={`goal-row ${selected ? "selected" : ""}`}
             onClick={() => onSelect(goal)}
         >
             <td className="goal-cell">{goal.nombre}</td>
@@ -36,7 +37,7 @@ export default function GoalRow({
                         className="btn btn--primary btn--sm"
                         onClick={(e) => { e.stopPropagation(); onEntry(goal); }}
                     >
-                        Entrada
+                        Registro
                     </button>
                 )}
 
