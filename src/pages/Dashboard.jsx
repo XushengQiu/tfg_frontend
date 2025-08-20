@@ -27,6 +27,7 @@ import GoalRow from "../components/GoalRow";
 import GoalDetail from "../components/GoalDetail";
 import GoalInsight from "../components/GoalInsight";
 
+import profileIcon from "../assets/icons/profile.svg";   // avatar por defecto (email+password)
 import "../index.css";
 
 /* Extrae mensaje de error legible */
@@ -79,7 +80,6 @@ export default function Dashboard() {
         setSortKey(key);
     };
 
-
     const ariaSort = (key) =>
         sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
 
@@ -111,7 +111,7 @@ export default function Dashboard() {
         []
     );
 
-    // Carga inicial: el backend YA trae valorObjetivo/unidad para metas Num
+    // Carga inicial
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
@@ -299,7 +299,7 @@ export default function Dashboard() {
     };
 
     /* -------------------- GUARDAR REGISTRO -------------------- */
-    // ——— NUEVO: estado del TOAST (felicitación primer registro) ———
+    // ——— estado del TOAST (felicitación primer registro) ———
     const [toast, setToast] = useState(null); // { goalName: string } | null
     useEffect(() => {
         if (!toast) return;
@@ -362,15 +362,22 @@ export default function Dashboard() {
                 finalMeta = mergeRecordIntoMeta(base, newReg);
             }
 
-            // ——— NUEVO: si queda con exactamente 1 registro → mostrar toast ———
-            const isFirstEver =
-                Array.isArray(finalMeta?.registros) && Number(finalMeta.registros.length) === 1;
+            // Flags del backend para felicitar solo una vez "de verdad"
+            const goalStats =
+                res?.data?.estadisticasMeta ??
+                res?.data?.estadisticas ??
+                res?.data?.goalStats ??
+                null;
+
+            const shouldCongrats =
+                goalStats?.tienePrimerRegistro === true &&
+                goalStats?.acabaDeCrearsePrimerRegistro === true;
 
             setGoals((curr) => curr.map((g) => (g._id === finalMeta._id ? finalMeta : g)));
             setSelectedGoal((sel) => (sel && sel._id === finalMeta._id ? finalMeta : sel));
             setEntryGoal(null);
 
-            if (isFirstEver) {
+            if (shouldCongrats) {
                 setToast({ goalName: finalMeta.nombre || "tu meta" });
             }
         } catch (e) {
@@ -515,10 +522,16 @@ export default function Dashboard() {
         <div className="dashboard-wrapper">
             <header className="dashboard-header">
                 <h1 className="dashboard-title">Mis metas</h1>
-                <div className="dashboard-header-right">
+
+                {/* CENTRO */}
+                <div className="dashboard-header-center">
                     <button className="create-goal-btn" onClick={() => setOpenNew(true)}>
                         Crear meta
                     </button>
+                </div>
+
+                {/* DERECHA */}
+                <div className="dashboard-header-right">
                     <button
                         className="avatar-btn"
                         onClick={() =>
@@ -528,8 +541,8 @@ export default function Dashboard() {
                         }
                     >
                         <img
-                            className="avatar-img"
-                            src={user?.photoURL || "/default-avatar.svg"}
+                            className={user?.photoURL ? "avatar-img" : "avatar-icon"}
+                            src={user?.photoURL || profileIcon}
                             alt="perfil"
                         />
                     </button>
@@ -574,19 +587,16 @@ export default function Dashboard() {
                                 </thead>
                                 <tbody>
                                 {goalsSorted.map((g) => (
-                                    // dentro del map de goalsSorted en Dashboard.jsx
                                     <GoalRow
                                         key={g._id}
                                         goal={g}
+                                        selected={selectedGoal?._id === g._id}
                                         createdLabel={createdLabel}
                                         objectiveLabel={objectiveLabel}
                                         onSelect={(goal) => {
                                             setSelectedGoal((cur) => {
                                                 const next = cur?._id === goal._id ? null : goal; // toggle
-                                                if (next) {
-                                                    // solo si realmente seleccionamos una meta
-                                                    ensureGoalDetail(next);
-                                                }
+                                                if (next) ensureGoalDetail(next);
                                                 return next;
                                             });
                                         }}
@@ -595,7 +605,6 @@ export default function Dashboard() {
                                         onEdit={(goal) => openEditModal(goal)}
                                         onDelete={handleDelete}
                                     />
-
                                 ))}
                                 </tbody>
                             </table>
@@ -671,9 +680,9 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* ——— NUEVO: toast felicitación (abajo-derecha) ——— */}
+            {/* ——— Toast felicitación (arriba-derecha, bajo el header) ——— */}
             {toast && (
-                <div className="toast show" role="status" aria-live="polite">
+                <div className="toast toast-top-right show" role="status" aria-live="polite">
                     <div className="toast-icon" aria-hidden="true">🎉</div>
                     <div className="toast-body">
                         <div className="toast-title">¡Primer registro!</div>
