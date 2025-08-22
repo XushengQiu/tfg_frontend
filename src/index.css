@@ -66,7 +66,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   padding-block:.30rem;
 }
 .dashboard-title{ font-size:2rem; font-weight:700; margin:.20rem 0 .20rem 28px; line-height:1.1; }
-.dashboard-header-center{ justify-self:center; }    /* ← botón centrado */
+.dashboard-header-center{ justify-self:center; }
 .dashboard-header-right{ display:flex; gap:1rem; align-items:center; margin-right:28px; justify-self:end; }
 
 .create-goal-btn{
@@ -91,15 +91,37 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 /* Cards */
 .card{ background:#fff; border-radius:12px; padding:1rem 1.25rem; box-shadow:0 2px 10px rgba(0,0,0,.04); }
 
-/* Lista de metas */
+/* ====== Lista de metas (AJUSTADA) ====== */
 .goals-scroll{ overflow:auto; min-height:0; }
-.goals-table{ width:100%; border-collapse:collapse; font-size:.95rem; }
+
+/* Tabla metas */
+.goals-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:.95rem;
+}
 .goals-table-wrapper{ overflow:visible; }
-.goals-table th,.goal-cell{ text-align:left; padding:.5rem; border-bottom:1px solid #ccc; }
+.goals-table th,
+.goals-table td{
+  text-align:left;
+  padding:.5rem;
+  vertical-align:middle;
+  border-bottom:1px solid #ccc;
+}
+.goals-table tbody tr{ border-bottom:0; }
+
 .goal-row{ cursor:pointer; transition:background-color .2s ease-in-out; }
 .goal-row:hover{ background:#f4f4f4; }
 .goal-row-finalizada{ background:#dcdcdc; }
-.goal-cell{ padding:.5rem; border-bottom:1px solid #ccc; }
+.goal-cell{ padding:.5rem; }
+
+/* contenedor de acciones */
+.goal-actions{
+  display:flex;
+  gap:.4rem;
+  flex-wrap:wrap;
+}
 
 /* Detalle (registros + descripción) */
 .goal-detail{ overflow:hidden; min-height:0; display:flex; gap:2rem; margin-top:1.5rem; }
@@ -136,8 +158,15 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   position:sticky; top:0; background:#fff; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.08);
 }
 .goal-registros table{ width:100%; border-collapse:collapse; }
+
+/* >>> Cabecera de REGISTROS: línea visible y algo más gruesa <<< */
 .goal-registros table thead th{
-  position:sticky; top:0; background:#fff; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.08);
+  position:sticky;
+  top:0;
+  background:#fff;
+  z-index:2;
+  border-bottom:2px solid rgba(0,0,0,.14); /* más gruesa y un pelín más oscura */
+  box-shadow:none;                         /* quitamos la sombra para evitar doble línea */
 }
 
 /* Registros: sin scroll exterior (scroll va en el wrapper interno inline) */
@@ -224,7 +253,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   bottom: 16px;
   background:#fff;
   border:1px solid #e0e0e0;
-  border-left:4px solid #2e7d32;   /* verde suave de éxito */
+  border-left:4px solid #2e7d32;
   border-radius:10px;
   box-shadow:0 10px 24px rgba(0,0,0,.12);
   display:flex;
@@ -235,7 +264,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   opacity:0;
   transform: translateY(8px);
   transition: opacity .18s ease, transform .18s ease;
-  z-index: 998; /* por debajo de tus modales (999) */
+  z-index: 998;
 }
 .toast.show{ opacity:1; transform:none; }
 .toast-icon{ font-size:1.35rem; line-height:1; }
@@ -252,11 +281,11 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 /* Desactivar el gris por meta finalizada */
 .goal-row-finalizada { background: transparent !important; }
 
-/* PINTAR solo la fila seleccionada (no por hover) */
+/* PINTAR solo la fila seleccionada */
 .goal-row.selected { background: #dcdcdc; }
 .goal-row.selected:hover { background: #dcdcdc; }
 
-/* Evitar que el hover ponga gris cuando NO está seleccionada */
+/* Evitar hover gris cuando no está seleccionada */
 .goals-table .goal-row:not(.selected):hover { background: transparent; }
 
 /* Botón sin borde ni recorte */
@@ -278,27 +307,24 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   display: block;
 }
 
-/* Icono por defecto (email+password): solo el SVG, sin círculo */
+/* Icono por defecto */
 .avatar-icon{
-  width: 32px;   /* ajusta si lo quieres más grande/pequeño */
+  width: 32px;
   height: 32px;
   display: block;
-  border-radius: 0;      /* por si hereda algo */
-  object-fit: contain;   /* evita recortes */
+  border-radius: 0;
+  object-fit: contain;
 }
 /* Asegura que el contenedor del avatar sea el ancla del toast */
-.dashboard-header-right {
-  position: relative; /* <- nuevo: permite posicionar el toast justo debajo */
-}
+.dashboard-header-right { position: relative; }
 
-/* TOAST arriba-derecha: evita que se estire por tener top y bottom a la vez */
+/* TOAST arriba-derecha */
 .toast {
   position: fixed;
   right: 28px;
-  top: 72px;            /* altura bajo el header, ajusta si quieres */
-  bottom: auto !important;  /* ← clave: anula cualquier bottom heredado */
+  top: 72px;
+  bottom: auto !important;
   max-width: min(92vw, 360px);
-
   background: #fff;
   border: 1px solid #e0e0e0;
   border-left: 4px solid #2e7d32;
@@ -309,7 +335,6 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   gap: .75rem;
   padding: .75rem .9rem;
   z-index: 998;
-
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity .18s ease, transform .18s ease;
@@ -324,3 +349,99 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   font-size:1.15rem; line-height:1; opacity:.6;
 }
 .toast-close:hover{ opacity:1; }
+
+/* Metas: reducir ligeramente SOLO el cuerpo de la tabla (no la cabecera) */
+.goals-table tbody td { font-size: .90rem; }
+
+/* Mantener la cabecera de metas como estaba */
+.goals-table thead th { font-size: .95rem; }
+
+/* Registros: cuerpo con líneas suaves */
+.goal-registros table tbody td{
+  font-size:.95rem;
+  border-bottom:1px solid rgba(0,0,0,.08);
+}
+.goal-registros table tbody tr:last-child td{ border-bottom:0; }
+
+/* Botón "Eliminar" en la tabla de registros: más pequeño y sin negrita */
+.goal-registros .btn--danger.btn--xs{
+  padding:.16rem .44rem;  /* un poco más compacto */
+  font-size:.74rem;       /* texto más pequeño */
+  font-weight:400;        /* aseguras sin negrita */
+}
+
+/* ===== Botones de acciones (más compactos y sin negrita en general) ===== */
+.btn{
+  padding:.33rem .64rem;
+  border-radius:8px;
+  border:1px solid transparent;
+  font-weight:400;
+  font-size:.88rem;
+  cursor:pointer;
+  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.btn--sm{
+  padding:.28rem .52rem;
+  font-size:.82rem;
+}
+
+/* ===== Colores solicitados ===== */
+.btn--primary{
+  background:#7FE08A;
+  color:#fff;
+  box-shadow:0 1px 6px rgba(18, 94, 40, .18);
+}
+.btn--primary:hover{ background:#73d980; }
+
+.btn--warn{ background:#777FE9; color:#fff; }
+.btn--warn:hover{ background:#6b72e3; }
+.btn--muted{ background:#e0e0e0; color:#222; }
+.btn--muted:hover{ background:#d6d6d6; }
+.btn--danger{ background:#e74c3c; color:#fff; }
+.btn--danger:hover{ background:#cf4436; }
+
+/* ===== Botón "Crear meta" → #F7B48D ===== */
+.create-goal-btn{
+  display:flex; gap:.5rem; align-items:center;
+  padding:.55rem 1rem;
+  border-radius:999px; border:none;
+  font-weight:600;
+  background:#f28749;
+  color:#fff;
+  box-shadow:0 2px 8px rgba(247,180,141,.25);
+  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.create-goal-btn:hover{ background:#e8a67f; box-shadow:0 4px 12px rgba(247,180,141,.35); }
+.create-goal-btn:active{ transform:translateY(1px); }
+
+/* --- Estadísticas compactas --- */
+.right-pane .user-stats.card{ padding:.5rem .75rem; }
+.user-stats .stats-title{ margin:0 0 .25rem 0; font-size:1.1rem; }
+.stats-content{
+  display:flex; align-items:baseline; gap:1.2rem; text-align:left; flex-wrap:wrap;
+}
+.stats-content p{ margin:0; color:#666; font-size:.9rem; }
+.stats-content strong{ font-size:1.05rem; }
+.stats-content .stats-percent{ margin-left:auto; white-space:nowrap; }
+.user-stats .stats-content p:not(.stats-percent){
+  display:flex; flex-direction:column; align-items:center; text-align:center; min-width:96px;
+}
+.user-stats .stats-content p:not(.stats-percent) strong{ margin-top:.15rem; }
+
+.streak-info{ margin-top:8px; text-align:center; color:#444; font-size:14px; }
+.streak-info strong{ font-weight:600; }
+.streak-flame{ position:relative; display:inline-block; width:22px; height:22px; vertical-align:-4px; opacity:.7; }
+.streak-flame img{ width:100%; height:100%; display:block; }
+.streak-flame .num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:#222; pointer-events:none; }
+
+/* Centrado vertical y separación simétrica en filas de REGISTROS */
+.goal-registros table tbody td{
+  vertical-align: middle;
+  padding-top: .10rem;   /* misma distancia arriba */
+  padding-bottom: .3rem;/* y abajo */
+}
+
+/* Botón "Eliminar" aún más estable en vertical */
+.goal-registros .btn--danger.btn--xs{
+  line-height: 1;        /* evita que la línea base empuje hacia arriba */
+}

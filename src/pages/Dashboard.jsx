@@ -218,10 +218,21 @@ export default function Dashboard() {
         }
     };
 
-    /* -------------------- FINALIZAR META -------------------- */
-    const handleFinalize = async (id) => {
-        if (!window.confirm("¿Marcar esta meta como COMPLETADA?")) return;
+    /* ───────────────── Confirmación modal genérica ─────────────── */
+    const [confirmDlg, setConfirmDlg] = useState(null); // {title, message, confirmText, cancelText, confirmClass, onConfirm}
+    const [confirmBusy, setConfirmBusy] = useState(false);
+    const openConfirm = (cfg) =>
+        setConfirmDlg({
+            title: "",
+            message: "",
+            confirmText: "Aceptar",
+            cancelText: "Cancelar",
+            confirmClass: "back-btn", // por defecto botón naranja
+            ...cfg,
+        });
 
+    /* -------------------- FINALIZAR META -------------------- */
+    const doFinalize = async (id) => {
         try {
             const res = await finalizeGoal(id);
             const metaSrv = res?.data?.meta;
@@ -242,11 +253,18 @@ export default function Dashboard() {
         }
     };
 
-    /* -------------------- ELIMINAR META -------------------- */
-    const handleDelete = async (id) => {
-        if (!window.confirm("¿Eliminar esta meta?")) return;
-        const toDelete = goals.find((g) => g._id === id);
+    const handleFinalize = (id) =>
+        openConfirm({
+            title: "Finalizar meta",
+            message: "¿Marcar esta meta como COMPLETADA?",
+            confirmText: "Aceptar",
+            confirmClass: "back-btn", // naranja
+            onConfirm: async () => await doFinalize(id),
+        });
 
+    /* -------------------- ELIMINAR META -------------------- */
+    const doDeleteGoal = async (id) => {
+        const toDelete = goals.find((g) => g._id === id);
         try {
             await deleteGoal(id);
             removeGoal(id);
@@ -277,26 +295,51 @@ export default function Dashboard() {
         }
     };
 
-    /* -------------------- ELIMINAR REGISTRO -------------------- */
-    const handleDeleteRecord = async (goalId, fechaISO) => {
-        const g = goals.find((x) => x._id === goalId);
-        if (g?.finalizado) return;
+    const handleDelete = (id) =>
+        openConfirm({
+            title: "Eliminar meta",
+            message: "¿Eliminar esta meta?",
+            confirmText: "Eliminar",
+            confirmClass: "delete-btn", // rojo
+            onConfirm: async () => await doDeleteGoal(id),
+        });
 
-        if (!window.confirm("¿Eliminar este registro?")) return;
+    /* -------------------- ELIMINAR REGISTRO -------------------- */
+    const doDeleteRecord = async (goalId, fechaISO) => {
         try {
             await deleteRecord(goalId, fechaISO);
             setGoals((curr) =>
                 curr.map((goal) =>
                     goal._id === goalId
-                        ? { ...goal, registros: goal.registros.filter((r) => r.fecha !== fechaISO) }
+                        ? {
+                            ...goal,
+                            registros: (goal.registros || []).filter((r) => r.fecha !== fechaISO),
+                        }
                         : goal
                 )
             );
-            syncSelected(goalId);
+            setSelectedGoal((sel) =>
+                sel && sel._id === goalId
+                    ? {
+                        ...sel,
+                        registros: (sel.registros || []).filter((r) => r.fecha !== fechaISO),
+                    }
+                    : sel
+            );
         } catch (e) {
             setError(apiError(e, "No se pudo eliminar el registro."));
         }
     };
+
+
+    const handleDeleteRecord = (goalId, fechaISO) =>
+        openConfirm({
+            title: "Eliminar registro",
+            message: "¿Eliminar este registro?",
+            confirmText: "Eliminar",
+            confirmClass: "delete-btn", // rojo
+            onConfirm: async () => await doDeleteRecord(goalId, fechaISO),
+        });
 
     /* -------------------- GUARDAR REGISTRO -------------------- */
     // ——— estado del TOAST (felicitación primer registro) ———
@@ -676,6 +719,41 @@ export default function Dashboard() {
                         <button className="back-btn" onClick={() => setError("")}>
                             Volver
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ——— Confirmación bonita (reemplaza a window.confirm) ——— */}
+            {confirmDlg && (
+                <div className="modal-overlay">
+                    <div className="modal" role="dialog" aria-modal="true">
+                        {confirmDlg.title ? <h2>{confirmDlg.title}</h2> : null}
+                        <p style={{ marginTop: 0 }}>{confirmDlg.message}</p>
+                        <div className="modal-actions">
+                            <button
+                                className={confirmDlg.confirmClass || "back-btn"}
+                                disabled={confirmBusy}
+                                onClick={async () => {
+                                    if (confirmBusy) return;
+                                    setConfirmBusy(true);
+                                    try {
+                                        await confirmDlg.onConfirm?.();
+                                        setConfirmDlg(null);
+                                    } finally {
+                                        setConfirmBusy(false);
+                                    }
+                                }}
+                            >
+                                {confirmBusy ? "..." : confirmDlg.confirmText || "Aceptar"}
+                            </button>
+                            <button
+                                className="back-btn"
+                                disabled={confirmBusy}
+                                onClick={() => setConfirmDlg(null)}
+                            >
+                                {confirmDlg.cancelText || "Cancelar"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
