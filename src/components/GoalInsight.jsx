@@ -1,5 +1,6 @@
 // src/components/GoalInsight.jsx
 import React, { useMemo, useState, useRef } from "react";
+import flameGIF from "../assets/icons/flame.gif";
 
 /* ---------------------- helpers ---------------------- */
 
@@ -12,7 +13,10 @@ function roundNicely(n) {
     return n.toFixed(3);
 }
 
-const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const MONTHS = [
+    "enero","febrero","marzo","abril","mayo","junio",
+    "julio","agosto","septiembre","octubre","noviembre","diciembre"
+];
 
 function toISO(y, m, d) {
     const mm = String(m).padStart(2, "0");
@@ -26,15 +30,9 @@ function parseISO(s) {
     if (!y || !m || !d) return null;
     return new Date(y, m - 1, d);
 }
-function fmtMonth(y, m) {
-    return `${MONTHS[m]} ${y}`;
-}
-function fmtDDMM(iso) {
-    return `${iso.slice(8,10)}/${iso.slice(5,7)}`;
-}
-function fmtDDMMYYYY(iso) {
-    return `${iso.slice(8,10)}/${iso.slice(5,7)}/${iso.slice(0,4)}`;
-}
+function fmtMonth(y, m) { return `${MONTHS[m]} ${y}`; }
+function fmtDDMM(iso) { return `${iso.slice(8,10)}/${iso.slice(5,7)}`; }
+function fmtDDMMYYYY(iso) { return `${iso.slice(8,10)}/${iso.slice(5,7)}/${iso.slice(0,4)}`; }
 
 // utilidades de año/mes
 function addMonths({ y, m }, delta) {
@@ -48,7 +46,7 @@ function clampYM(v, min, max) {
     return v;
 }
 
-// ── week-of-month helpers (lunes inicio) ──
+// ── semanas del mes (lunes inicio) ──
 function weekCountInMonth(year, month1) {
     const y = year, m0 = month1 - 1;
     const first = new Date(y, m0, 1);
@@ -56,17 +54,30 @@ function weekCountInMonth(year, month1) {
     const days = new Date(y, m0 + 1, 0).getDate();
     return Math.ceil((firstWeekday + days) / 7);
 }
+// ── rango de la semana N (1..sem) de un mes, con semanas que empiezan en LUNES ──
 function weekRangeOfMonth(year, month1, weekIndex) {
     const y = year, m0 = month1 - 1;
     const first = new Date(y, m0, 1);
+    const daysInMonth = new Date(y, m0 + 1, 0).getDate();
     const firstWeekday = (first.getDay() + 6) % 7;
-    const days = new Date(y, m0 + 1, 0).getDate();
-    let startDay = 1 - firstWeekday + 7 * (weekIndex - 1);
-    if (startDay < 1) startDay = 1;
-    let endDay = startDay + 6;
-    if (endDay > days) endDay = days;
+    const firstMonday = firstWeekday === 0 ? 1 : (8 - firstWeekday);
+
+    let startDay, endDay;
+    if (firstMonday === 1) {
+        startDay = 1 + 7 * (weekIndex - 1);
+        endDay   = Math.min(daysInMonth, startDay + 6);
+    } else if (weekIndex === 1) {
+        startDay = 1;
+        endDay   = Math.min(daysInMonth, firstMonday - 1);
+    } else {
+        startDay = firstMonday + 7 * (weekIndex - 2);
+        endDay   = Math.min(daysInMonth, startDay + 6);
+    }
+    if (startDay > daysInMonth) { startDay = daysInMonth; endDay = daysInMonth; }
+
     return { start: toISO(y, month1, startDay), end: toISO(y, month1, endDay) };
 }
+
 function computePeriodRange(mode, year, month1, weekIndex) {
     if (mode === "anio")   return { start: toISO(year, 1, 1), end: toISO(year, 12, 31) };
     if (mode === "mes")    return { start: toISO(year, month1, 1), end: toISO(year, month1, new Date(year, month1, 0).getDate()) };
@@ -85,12 +96,8 @@ function diffDaysISO(a, b) {
     const da = parseISO(a), db = parseISO(b);
     return Math.floor((db - da) / 86400000);
 }
-function firstOfNextMonth(d) {
-    return new Date(d.getFullYear(), d.getMonth() + 1, 1);
-}
-function isoFromDate(d) {
-    return toISO(d.getFullYear(), d.getMonth() + 1, d.getDate());
-}
+function firstOfNextMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 1); }
+function isoFromDate(d) { return toISO(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
 function nextMonday(date) {
     const day = date.getDay(); // 0 dom .. 6 sab
     const delta = (1 - day + 7) % 7 || 7; // siguiente lunes (si ya es lunes, +7)
@@ -115,7 +122,7 @@ export default function GoalInsight({ goal }) {
 /* ---------------------- NUMERIC CHART (SVG) + FILTROS ---------------------- */
 
 function NumericChart({ goal }) {
-    // límites válidos: inicio = creación; fin = estadisticas.fechaFin (o hoy si no viene)
+    // límites de dominio: inicio = creación; fin = estadisticas.fechaFin (o hoy si no viene)
     const minDate =
         parseISO(goal.fecha) ||
         (goal.registros?.length
@@ -129,7 +136,11 @@ function NumericChart({ goal }) {
     const minISO = isoFromDate(minDate);
     const maxISO = isoFromDate(endDate);
 
-    // hoy (para valores por defecto del filtro)
+    const isNumIndef =
+        String(goal.tipo).toLowerCase() === "num" &&
+        String(goal.duracionUnidad || "").toLowerCase().startsWith("indef");
+
+    // hoy (para valores por defecto en “Rango manual”)
     const today = new Date();
     const todayISO = isoFromDate(today);
     const defaultToISO = todayISO > maxISO ? maxISO : todayISO;
@@ -147,12 +158,11 @@ function NumericChart({ goal }) {
     const [whichEdge, setWhichEdge] = useState("ultimos"); // 'primeros' | 'ultimos'
     const [edgeCount, setEdgeCount] = useState("");
 
-    // 3) rango manual — límites min/max = [inicio … fechaFin],
-    //    valores por defecto = [inicio … HOY (clamp a fechaFin)]
+    // 3) rango manual — en indefinido: solo tope inferior
     const [fromISO, setFromISO] = useState(minISO);
     const [toISOValue, setToISOValue] = useState(defaultToISO);
 
-    // años válidos
+    // años válidos (hasta maxISO; en indefinidas usamos hoy como techo visual)
     const yearMin = minDate.getFullYear();
     const yearMax = endDate.getFullYear();
     const years = useMemo(() => {
@@ -177,14 +187,15 @@ function NumericChart({ goal }) {
                 const prClamped = intersectRanges({ start: minISO, end: maxISO }, pr);
                 out = regsAsc.filter((r) => r.fecha >= prClamped.start && r.fecha <= prClamped.end);
             } else {
-                // sin filtro: todo el rango válido
                 out = regsAsc.filter((r) => r.fecha >= minISO && r.fecha <= maxISO);
             }
         }
 
         if (activeFilter === "rango") {
             let start = fromISO ? maxISODate(fromISO, minISO) : minISO;
-            let end   = toISOValue ? minISODate(toISOValue, maxISO) : maxISO;
+            // en indefinidas no imponemos tope superior, solo respetamos start<=end
+            let end   = toISOValue || maxISO;
+            if (!isNumIndef) end = minISODate(end, maxISO);
             if (end < start) end = start;
             out = regsAsc.filter((r) => r.fecha >= start && r.fecha <= end);
         }
@@ -204,7 +215,7 @@ function NumericChart({ goal }) {
         // periodo
         periodMode, selYear, selMonth, selWeek, minISO, maxISO,
         // rango
-        fromISO, toISOValue,
+        fromISO, toISOValue, isNumIndef,
         // registros
         whichEdge, edgeCount
     ]);
@@ -223,13 +234,13 @@ function NumericChart({ goal }) {
         return { points, yMin, yMax };
     }, [regsFiltered, goal]);
 
-    // ——— rango visible (para “Mostrando de … hasta …”) ———
+    // ——— rango mostrado (SIEMPRE, aunque no haya puntos) ———
     const displayedRange = useMemo(() => {
-        if (isoDates.length === 0) return null;
-
         if (activeFilter === "rango") {
             const start = fromISO ? maxISODate(fromISO, minISO) : minISO;
-            const end   = toISOValue ? minISODate(toISOValue, maxISO) : maxISO;
+            let end = toISOValue || maxISO;
+            if (!isNumIndef) end = minISODate(end, maxISO);
+            if (end < start) return { start, end: start };
             return { start, end };
         }
 
@@ -237,20 +248,23 @@ function NumericChart({ goal }) {
             if (periodMode === "none") {
                 return { start: minISO, end: maxISO };
             }
+            // mostrar SIEMPRE el rango del periodo completo (no recortado)
             const pr = computePeriodRange(periodMode, selYear, selMonth, selWeek);
-            const c = intersectRanges({ start: minISO, end: maxISO }, pr);
-            return c;
+            return pr;
         }
 
-        // registros: por las fechas reales mostradas
-        return { start: isoDates[0], end: isoDates[isoDates.length - 1] };
-    }, [activeFilter, periodMode, selYear, selMonth, selWeek, fromISO, toISOValue, minISO, maxISO, isoDates]);
+        // registros: por las fechas reales (si no hay, mostramos dominio completo)
+        if (isoDates.length > 0) {
+            return { start: isoDates[0], end: isoDates[isoDates.length - 1] };
+        }
+        return { start: minISO, end: maxISO };
+    }, [activeFilter, periodMode, selYear, selMonth, selWeek, fromISO, toISOValue, minISO, maxISO, isoDates, isNumIndef]);
 
-    // ——— ticks del eje X (adaptativos por filtro/mode) ———
+    // ——— ticks del eje X (adaptativos) ———
     const tickIndices = useMemo(() => {
         if (isoDates.length === 0) return [];
 
-        // mapa fecha->indice del punto con esa fecha exacta
+        // mapa fecha->indice
         const idxByISO = new Map();
         isoDates.forEach((iso, i) => { if (!idxByISO.has(iso)) idxByISO.set(iso, i); });
         const collect = (set, iso) => {
@@ -259,11 +273,9 @@ function NumericChart({ goal }) {
         };
         const all = () => isoDates.map((_, i) => i);
 
-        // helper para semanal/meses sobre un rango [a,b]
         const weeklyTicks = (aISO, bISO) => {
             const res = new Set();
-            res.add(0);
-            res.add(isoDates.length - 1);
+            res.add(0); res.add(isoDates.length - 1);
             collect(res, aISO);
             let cursor = nextMonday(parseISO(aISO));
             const endD = parseISO(bISO);
@@ -276,8 +288,7 @@ function NumericChart({ goal }) {
         };
         const monthlyTicks = (aISO, bISO) => {
             const res = new Set();
-            res.add(0);
-            res.add(isoDates.length - 1);
+            res.add(0); res.add(isoDates.length - 1);
             collect(res, aISO);
             let cursor = firstOfNextMonth(parseISO(aISO));
             const endD = parseISO(bISO);
@@ -291,7 +302,8 @@ function NumericChart({ goal }) {
 
         if (activeFilter === "rango") {
             const a = fromISO ? maxISODate(fromISO, minISO) : minISO;
-            const b = toISOValue ? minISODate(toISOValue, maxISO) : maxISO;
+            let b = toISOValue || maxISO;
+            if (!isNumIndef) b = minISODate(b, maxISO);
             const span = diffDaysISO(a, b);
             if (span <= 14) return all();
             if (span > 61) return monthlyTicks(a, b);
@@ -310,34 +322,30 @@ function NumericChart({ goal }) {
         // PERIODO
         if (activeFilter === "periodo") {
             if (periodMode === "none") {
-                // misma regla adaptativa sobre el rango completo válido
                 const a = minISO, b = maxISO;
                 const span = diffDaysISO(a, b);
                 if (span <= 14) return all();
                 if (span > 61) return monthlyTicks(a, b);
                 return weeklyTicks(a, b);
             }
-
             const pr = computePeriodRange(periodMode, selYear, selMonth, selWeek);
             const { start: a, end: b } = intersectRanges({ start: minISO, end: maxISO }, pr);
 
             if (periodMode === "semana") {
-                // semana: todos los días
+                // semana: todos los días dentro del tramo visible
                 return isoDates
                     .map((iso, i) => ({ iso, i }))
                     .filter(({ iso }) => iso >= a && iso <= b)
                     .map(({ i }) => i);
             }
             if (periodMode === "mes") {
-                // mes: ticks por semanas
                 return weeklyTicks(a, b);
             }
-            // anio: ticks por meses
             return monthlyTicks(a, b);
         }
 
         return all();
-    }, [activeFilter, periodMode, selYear, selMonth, selWeek, isoDates, fromISO, toISOValue, minISO, maxISO]);
+    }, [activeFilter, periodMode, selYear, selMonth, selWeek, isoDates, fromISO, toISOValue, minISO, maxISO, isNumIndef]);
 
     // SVG + hover
     const W = 700, H = 260;
@@ -382,12 +390,15 @@ function NumericChart({ goal }) {
         setEdgeCount(String(n));
     };
 
-    // si cambia mes/año y estamos en semana, mantener en rango
+    // corregir semana fuera de rango al cambiar de mes/año
     React.useEffect(() => {
         const weeks = weekCountInMonth(selYear, selMonth);
         if (periodMode === "semana" && selWeek > weeks) setSelWeek(weeks);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selMonth, selYear, periodMode]);
+
+    // utilidades para deshabilitar meses anteriores al inicio
+    const minMonthForYear = selYear === yearMin ? (minDate.getMonth() + 1) : 1;
 
     return (
         <div className="insight-block">
@@ -413,18 +424,12 @@ function NumericChart({ goal }) {
             >
                 <rect x="0" y="0" width={700} height={260} fill="#fff" rx="10" />
 
-                {/* Eje X (línea base) */}
+                {/* Eje X */}
                 <line x1={M.left} y1={M.top + h} x2={M.left + w} y2={M.top + h} stroke="#ccc" />
 
-                {/* Ticks del eje X (adaptativos) */}
+                {/* Ticks X */}
                 {tickIndices.map((idx) => (
-                    <text
-                        key={`tick-${idx}`}
-                        x={M.left + x(idx)}
-                        y={M.top + h + 18}
-                        textAnchor="middle"
-                        className="tick"
-                    >
+                    <text key={`tick-${idx}`} x={M.left + x(idx)} y={M.top + h + 18} textAnchor="middle" className="tick">
                         {fmtDDMM(isoDates[idx])}
                     </text>
                 ))}
@@ -490,30 +495,15 @@ function NumericChart({ goal }) {
                 <div className="filter-chooser">
                     <div className="filter-chooser-title">Filtrar por:</div>
                     <label className="radio-line">
-                        <input
-                            type="radio"
-                            name="insightFilter"
-                            checked={activeFilter === "rango"}
-                            onChange={() => setActiveFilter("rango")}
-                        />
+                        <input type="radio" name="insightFilter" checked={activeFilter === "rango"} onChange={() => setActiveFilter("rango")} />
                         <span>Rango manual</span>
                     </label>
                     <label className="radio-line">
-                        <input
-                            type="radio"
-                            name="insightFilter"
-                            checked={activeFilter === "periodo"}
-                            onChange={() => setActiveFilter("periodo")}
-                        />
+                        <input type="radio" name="insightFilter" checked={activeFilter === "periodo"} onChange={() => setActiveFilter("periodo")} />
                         <span>Periodo</span>
                     </label>
                     <label className="radio-line">
-                        <input
-                            type="radio"
-                            name="insightFilter"
-                            checked={activeFilter === "registros"}
-                            onChange={() => setActiveFilter("registros")}
-                        />
+                        <input type="radio" name="insightFilter" checked={activeFilter === "registros"} onChange={() => setActiveFilter("registros")} />
                         <span>Nº de registros</span>
                     </label>
                 </div>
@@ -526,7 +516,7 @@ function NumericChart({ goal }) {
                                 type="date"
                                 value={fromISO}
                                 min={minISO}
-                                max={maxISO}
+                                // en indefinidas, sin tope superior para inicio
                                 onChange={(e) => setFromISO(e.target.value)}
                                 title="Fecha inicio (incluida)"
                             />
@@ -535,20 +525,20 @@ function NumericChart({ goal }) {
                                 className="filter-input"
                                 type="date"
                                 value={toISOValue}
-                                min={minISO}
-                                max={maxISO}
+                                min={fromISO || minISO}
+                                // en indefinidas no imponemos max
+                                max={isNumIndef ? undefined : maxISO}
                                 onChange={(e) => setToISOValue(e.target.value)}
                                 title="Fecha fin (incluida)"
                             />
                             {(fromISO !== minISO || toISOValue !== defaultToISO) && (
-                                <button
-                                    className="filter-clear"
-                                    onClick={() => { setFromISO(minISO); setToISOValue(defaultToISO); }}
-                                >
+                                <button className="filter-clear" onClick={() => { setFromISO(minISO); setToISOValue(defaultToISO); }}>
                                     Limpiar
                                 </button>
                             )}
-                            <div className="filter-hint">Inicio ≥ {minISO} y fin ≤ {maxISO}.</div>
+                            <div className="filter-hint">
+                                {isNumIndef ? <>A partir de {minISO}.</> : <>Inicio ≥ {minISO} y fin ≤ {maxISO}.</>}
+                            </div>
                         </div>
                     )}
 
@@ -584,7 +574,11 @@ function NumericChart({ goal }) {
                                     onChange={(e) => setSelMonth(Number(e.target.value))}
                                     title="Mes"
                                 >
-                                    {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                                    {MONTHS.map((m, i) => {
+                                        const monthValue = i + 1;
+                                        const disabled = selYear === yearMin && monthValue < minMonthForYear;
+                                        return <option key={i} value={monthValue} disabled={disabled}>{m}</option>;
+                                    })}
                                 </select>
                             )}
 
@@ -597,13 +591,21 @@ function NumericChart({ goal }) {
                                 >
                                     {Array.from({ length: weeksInSelMonth }).map((_, i) => {
                                         const num = i + 1;
+                                        // opcional: deshabilitar semanas totalmente anteriores al inicio cuando coincide año/mes
+                                        let disabled = false;
+                                        if (selYear === yearMin && selMonth === (minDate.getMonth() + 1)) {
+                                            const r = weekRangeOfMonth(selYear, selMonth, num);
+                                            if (r.end < minISO) disabled = true;
+                                        }
                                         const text = num === weeksInSelMonth ? "Última semana" : `${num}º Semana`;
-                                        return <option key={num} value={num}>{text}</option>;
+                                        return <option key={num} value={num} disabled={disabled}>{text}</option>;
                                     })}
                                 </select>
                             )}
 
-                            <div className="filter-hint">Dentro de {minISO} a {maxISO}.</div>
+                            <div className="filter-hint">
+                                {isNumIndef ? <>A partir de {minISO}.</> : <>Dentro de {minISO} a {maxISO}.</>}
+                            </div>
                         </div>
                     )}
 
@@ -637,7 +639,7 @@ function NumericChart({ goal }) {
     );
 }
 
-/* ---------------------- Calendario Bool (ajustado a estadisticas.fechaFin, mes actual por defecto) ---------------------- */
+/* ---------------------- Calendario Bool (Indef: hasta mes actual o hasta mes del último registro si es posterior) ---------------------- */
 
 function BooleanCalendar({ goal }) {
     const map = useMemo(() => {
@@ -658,14 +660,34 @@ function BooleanCalendar({ goal }) {
             : null) ||
         new Date();
 
+    // Base para casos NO indefinidos: estadisticas.fechaFin o hoy
     const statsEnd = parseISO(goal.estadisticas?.fechaFin);
-    const endDate = statsEnd || new Date();
+    const baseEnd = statsEnd || new Date();
 
     const minYM = { y: startDate.getFullYear(), m: startDate.getMonth() };
-    const maxYM = { y: endDate.getFullYear(), m: endDate.getMonth() };
 
-    // por defecto: mes del día actual (clampeado)
+    // Para Bool + Indefinido → hasta el mes actual,
+    // pero si el último registro está en un mes posterior, usar ese mes.
+    const isIndef = String(goal.duracionUnidad || "").toLowerCase().startsWith("indef");
     const today = new Date();
+    let maxYM = { y: baseEnd.getFullYear(), m: baseEnd.getMonth() };
+
+    if (goal.tipo === "Bool" && isIndef) {
+        maxYM = { y: today.getFullYear(), m: today.getMonth() };
+        if (Array.isArray(goal.registros) && goal.registros.length) {
+            const latestISO = goal.registros.reduce(
+                (max, r) => (r?.fecha > max ? r.fecha : max),
+                goal.registros[0].fecha
+            );
+            const latest = parseISO(latestISO);
+            if (latest) {
+                const latestYM = { y: latest.getFullYear(), m: latest.getMonth() };
+                if (beforeYM(latestYM, maxYM) > 0) maxYM = latestYM;
+            }
+        }
+    }
+
+    // por defecto: mes del día actual (clampeado a [minYM, maxYM])
     const initial = clampYM({ y: today.getFullYear(), m: today.getMonth() }, minYM, maxYM);
 
     const [ym, setYM] = useState(initial);
@@ -687,6 +709,38 @@ function BooleanCalendar({ goal }) {
         cells.push({ type: "day", d, iso, val });
     }
     while (cells.length % 7 !== 0) cells.push({ type: "pad" });
+
+    // ---- cálculo de racha (streak) ----
+    const streak = useMemo(() => {
+        // si no hay registros válidos, no mostramos nada
+        const keys = Array.from(map.keys());
+        if (keys.length === 0) return null;
+
+        // último registro (ISO mayor)
+        const latestISO = keys.reduce((max, k) => (k > max ? k : max), keys[0]);
+        const lastVal = map.get(latestISO);
+        if (typeof lastVal !== "boolean") return null;
+
+        let count = 0;
+        let cursor = parseISO(latestISO);
+        const wanted = lastVal;
+        while (true) {
+            const iso = isoFromDate(cursor);
+            const v = map.get(iso);
+            if (v === wanted) {
+                count += 1;
+                // avanzar un día hacia atrás
+                cursor.setDate(cursor.getDate() - 1);
+            } else {
+                break; // distinto estado o día sin registro → fin de racha
+            }
+        }
+
+        return {
+            label: wanted ? "Sí" : "No",
+            count
+        };
+    }, [map]);
 
     return (
         <div className="insight-block calendar-block">
@@ -723,6 +777,49 @@ function BooleanCalendar({ goal }) {
                 <button className="cal-nav-btn" onClick={goPrev} disabled={!canPrev} aria-label="Mes anterior">‹</button>
                 <button className="cal-nav-btn" onClick={goNext} disabled={!canNext} aria-label="Mes siguiente">›</button>
             </div>
+
+            {/* Racha */}
+            {streak && (
+                <div
+                    className="streak-row"
+                    style={{
+                        marginTop: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "#333"
+                    }}
+                >
+                    <span>Llevas una racha de</span>
+                    <strong>{streak.label}</strong>
+                    <span
+                        className="streak-badge"
+                        aria-label={`Racha de ${streak.count} días`}
+                        style={{ position: "relative", display: "inline-block", width: 26, height: 26, verticalAlign: "middle" }}
+                    >
+                        <img
+                            src={flameGIF}
+                            alt=""
+                            aria-hidden="true"
+                            style={{ width: "100%", height: "100%", opacity: 0.5 }}
+                        />
+                        <span
+                            className="streak-count"
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700
+                            }}
+                        >
+                            {streak.count}
+                        </span>
+                    </span>
+                    <span>días</span>
+                </div>
+            )}
         </div>
     );
 }

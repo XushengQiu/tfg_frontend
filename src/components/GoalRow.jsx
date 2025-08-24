@@ -31,48 +31,68 @@ export default function GoalRow({
 
             <td className="goal-cell">{objectiveLabel(goal)}</td>
 
-            <td className="goal-cell" style={{ display: "flex", gap: ".4rem" }}>
-                {!goal.finalizado && (
-                    <button
-                        className="btn btn--primary btn--sm"
-                        onClick={(e) => { e.stopPropagation(); onEntry(goal); }}
-                    >
-                        Registro
-                    </button>
-                )}
+            {/* Acciones: sin flex en el <td>; lo movemos a un contenedor interno */}
+            <td className="goal-cell">
+                <div className="goal-actions">
+                    {!goal.finalizado && (
+                        <button
+                            className="btn btn--primary btn--sm"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEntry(goal);
+                            }}
+                        >
+                            Registro
+                        </button>
+                    )}
 
-                {goal.finalizado ? (
-                    <>
-                        <span style={{ color: "green", fontWeight: 600 }}>COMPLETADA</span>
-                        <button
-                            className="btn btn--danger btn--sm"
-                            onClick={(e) => { e.stopPropagation(); onDelete(goal._id); }}
-                        >
-                            Eliminar
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button
-                            className="btn btn--warn btn--sm"
-                            onClick={(e) => { e.stopPropagation(); onFinalize(goal._id); }}
-                        >
-                            Finalizar
-                        </button>
-                        <button
-                            className="btn btn--muted btn--sm"
-                            onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
-                        >
-                            Editar
-                        </button>
-                        <button
-                            className="btn btn--danger btn--sm"
-                            onClick={(e) => { e.stopPropagation(); onDelete(goal._id); }}
-                        >
-                            Eliminar
-                        </button>
-                    </>
-                )}
+                    {goal.finalizado ? (
+                        <>
+              <span style={{ color: "green", fontWeight: 600 }}>
+                COMPLETADA
+              </span>
+                            <button
+                                className="btn btn--danger btn--sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(goal._id);
+                                }}
+                            >
+                                Eliminar
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                className="btn btn--warn btn--sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onFinalize(goal._id);
+                                }}
+                            >
+                                Finalizar
+                            </button>
+                            <button
+                                className="btn btn--muted btn--sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit(goal);
+                                }}
+                            >
+                                Editar
+                            </button>
+                            <button
+                                className="btn btn--danger btn--sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(goal._id);
+                                }}
+                            >
+                                Eliminar
+                            </button>
+                        </>
+                    )}
+                </div>
             </td>
         </tr>
     );
