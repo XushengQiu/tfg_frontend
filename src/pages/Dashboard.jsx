@@ -613,7 +613,7 @@ export default function Dashboard() {
                                         aria-sort={ariaSort("fecha")}
                                         title="Ordenar por fecha de inicio"
                                     >
-                                        Fecha de inicio{" "}
+                                        Fecha inicio{" "}
                                         <span className="sort-icons">{iconFor("fecha")}</span>
                                     </th>
                                     <th

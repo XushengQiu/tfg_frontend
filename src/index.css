@@ -1,4 +1,4 @@
-/* ───────── Base ───────── */
+/* ——— Base ——— */
 html,body,#root{ height:100%; }
 body{
   margin:0;
@@ -9,7 +9,7 @@ body{
 }
 code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace; }
 
-/* ───────── Perfil ───────── */
+/* ——— Perfil ——— */
 .profile-wrapper{ display:flex; flex-direction:column; min-height:100vh; background:#812f7f; color:#fff; }
 .profile-header{ display:flex; justify-content:space-between; align-items:center; padding:1.2rem 1.8rem; }
 .profile-card{ margin:3rem auto; padding:2rem 3rem; border:3px solid #000; border-radius:8px; width:min(90%,400px); background:#fff; color:#000; }
@@ -21,7 +21,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .back-btn{ background:#d5975d; color:#fff; }
 .delete-btn:disabled{ opacity:.45; cursor:not-allowed; filter:saturate(.7); }
 
-/* ───────── Modal genérico ───────── */
+/* ——— Modal genérico ——— */
 .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:999; }
 .modal{
   position:relative; background:#fff; color:#000; padding:2rem 2.5rem;
@@ -32,6 +32,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .modal input[type="text"],
 .modal input[type="number"],
 .modal input[type="date"],
+.modal input[type="email"],
 .modal select,
 .modal textarea{
   width:100%; padding:.5rem; margin-top:.25rem; font-size:1rem;
@@ -42,26 +43,26 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .modal-close{ position:absolute; top:10px; right:12px; border:none; background:transparent; font-size:1.5rem; line-height:1; cursor:pointer; opacity:.6; }
 .modal-close:hover{ opacity:1; }
 
-/* Links aspecto enlace (Login) */
+/* ——— Enlaces tipo botón (Login) ——— */
 .linklike{ background:none; border:none; padding:0; font:inherit; text-decoration:underline; cursor:pointer; color:#1a73e8; }
 .linklike:focus-visible{ outline:2px solid #1a73e8; outline-offset:2px; }
 
-/* FABs legales en Profile */
+/* ——— Accesos legales ——— */
 .legal-fabs{ position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:998; }
 .legal-fab{ padding:.5rem .9rem; border-radius:999px; border:1px solid #ccc; background:#fff; color:#333; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.15); font-size:.9rem; }
 .legal-fab:hover{ background:#f7f7f7; }
 
-/* Pie legal en Login */
+/* ——— Pie legal en Login ——— */
 .login-legal{ margin-top:auto; padding:1rem 0 2rem; font-size:.85rem; color:#666; text-align:center; }
 
-/* ───────── Dashboard (layout) ───────── */
+/* ——— Dashboard (layout general) ——— */
 .dashboard-wrapper{ height:100%; min-height:100vh; display:flex; flex-direction:column; gap:1rem; padding-top:.5rem; padding-bottom:1rem; }
 
-/* Header como GRID para centrar el botón */
+/* Header: centrado sin tocar estructura */
 .dashboard-header{
   flex:0 0 auto;
   display:grid;
-  grid-template-columns: 1fr auto 1fr;  /* izq | centro | dcha */
+  grid-template-columns: 1fr auto 1fr; /* izq | centro | dcha */
   align-items:center;
   padding-block:.30rem;
 }
@@ -69,71 +70,73 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .dashboard-header-center{ justify-self:center; }
 .dashboard-header-right{ display:flex; gap:1rem; align-items:center; margin-right:28px; justify-self:end; }
 
+/* CTA "Crear meta" — exacto como lo tenías */
 .create-goal-btn{
   display:flex; gap:.5rem; align-items:center;
   padding:.55rem 1rem; border-radius:999px; border:none; font-weight:600;
-  background:#1a73e8; color:#fff; box-shadow:0 2px 8px rgba(26,115,232,.20);
+  background:#f28749; color:#fff; box-shadow:0 2px 8px rgba(247,180,141,.25);
   transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
 }
-.create-goal-btn:hover{ background:#1669c1; box-shadow:0 4px 12px rgba(26,115,232,.28); }
+.create-goal-btn:hover{ background:#e8a67f; box-shadow:0 4px 12px rgba(247,180,141,.35); }
 .create-goal-btn:active{ transform:translateY(1px); }
-.create-goal-btn:focus-visible{ outline:2px solid #1a73e8; outline-offset:2px; }
+.create-goal-btn:focus-visible{ outline:2px solid #f28749; outline-offset:2px; }
 
+/* Avatar (una sola versión, la efectiva) */
 .icon{ width:1.2rem; height:1.2rem; }
-.avatar-btn{ width:40px; height:40px; border:1px solid #ccc; border-radius:50%; overflow:hidden; padding:0; }
-.avatar-img{ width:100%; height:100%; object-fit:cover; }
+.avatar-btn{ padding:0; border:none; background:transparent; display:flex; align-items:center; justify-content:center; }
+.avatar-img{ width:40px; height:40px; border-radius:50%; object-fit:cover; display:block; }
+.avatar-icon{ width:32px; height:32px; display:block; object-fit:contain; }
 
-/* Tablero 70/30 */
+/* Tablero 70/30 (no se toca layout) */
 .board{ flex:1 1 auto; min-height:0; display:grid; grid-template-columns:7fr 5fr; gap:1.25rem; margin-top:.25rem; padding-bottom:.5rem; box-sizing:border-box; }
 .left-pane{ display:grid; grid-template-rows:minmax(0,49%) minmax(0,51%); min-height:0; }
 .right-pane{ display:flex; flex-direction:column; gap:1rem; min-height:0; }
 
-/* Cards */
+/* Tarjetas genéricas */
 .card{ background:#fff; border-radius:12px; padding:1rem 1.25rem; box-shadow:0 2px 10px rgba(0,0,0,.04); }
 
-/* ====== Lista de metas (AJUSTADA) ====== */
+/* ——— Lista de metas ——— */
 .goals-scroll{ overflow:auto; min-height:0; }
 
-/* Tabla metas */
-.goals-table{
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  font-size:.95rem;
-}
+/* Tabla metas (mismo look, menos ruido) */
+.goals-table{ width:100%; border-collapse:separate; border-spacing:0; font-size:.95rem; }
 .goals-table-wrapper{ overflow:visible; }
-.goals-table th,
-.goals-table td{
-  text-align:left;
-  padding:.5rem;
-  vertical-align:middle;
-  border-bottom:1px solid #ccc;
+.goals-table th, .goals-table td{
+  text-align:left; padding:.5rem; vertical-align:middle; border-bottom:1px solid #ccc;
 }
 .goals-table tbody tr{ border-bottom:0; }
 
+/* NOMBRE: que rompa palabras muuuuy largas */
+.goals-table td:first-child, .goals-table th:first-child{
+  overflow-wrap:anywhere; word-break:break-word; hyphens:auto;
+}
+/* FECHA INICIO: ancho fijo y sin partir */
+.goals-table th:nth-child(2), .goals-table td:nth-child(2){ width:120px; white-space:nowrap; }
+/* OBJETIVO: un mínimo para que respire */
+.goals-table th:nth-child(4), .goals-table td:nth-child(4){ min-width:160px; }
+/* ACCIONES: fijo y sin wrap */
+.goals-table th:nth-child(5), .goals-table td:nth-child(5){ width:270px; white-space:nowrap; }
+
+/* Filas (hover/estado) */
 .goal-row{ cursor:pointer; transition:background-color .2s ease-in-out; }
 .goal-row:hover{ background:#f4f4f4; }
 .goal-row-finalizada{ background:#dcdcdc; }
 .goal-cell{ padding:.5rem; }
 
-/* contenedor de acciones */
-.goal-actions{
-  display:flex;
-  gap:.4rem;
-  flex-wrap:wrap;
-}
+/* Botonera de acciones en línea (no apilar) */
+.goal-actions{ display:flex; gap:.4rem; flex-wrap:nowrap; }
 
-/* Detalle (registros + descripción) */
+/* ——— Detalle (registros + descripción) ——— */
 .goal-detail{ overflow:hidden; min-height:0; display:flex; gap:2rem; margin-top:1.5rem; }
 .goal-registros,.goal-descripcion{ flex:1; }
 
-/* Placeholders */
+/* Placeholders grises */
 .registros-placeholder,.graph-placeholder{
   background:#f2f2f2; height:160px; border-radius:6px;
   display:flex; justify-content:center; align-items:center; color:#666; font-size:.9rem;
 }
 
-/* Stats derecha */
+/* Panel de estadísticas derecha */
 .user-stats{ flex:0 0 auto; background:#f8f8f8; border-radius:10px; }
 .stats-content{ display:grid; grid-template-columns:repeat(2,1fr); text-align:center; gap:1rem; }
 .stats-content p{ color:#666; margin:0; }
@@ -141,62 +144,58 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .placeholder{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; }
 .placeholder-inner{ color:#777; }
 
-/* Utilidades formularios */
+/* Utilidades de formularios varias */
 .fecha-wrapper{ position:relative; display:flex; align-items:center; }
 .calendar-icon{ position:absolute; left:.5rem; width:1rem; height:1rem; color:#777; }
 .fecha-input{ padding-left:2rem; }
-.short{ width:80px; }
-.medium{ width:130px; }
+.short{ width:80px; } .medium{ width:130px; }
 .dashboard-loading{ padding:1.5rem; font-size:1.1rem; }
 .field-group{ display:flex; align-items:center; gap:8px; }
 .inline-check{ margin-left:8px; display:flex; align-items:center; gap:6px; white-space:nowrap; }
 .group-disabled{ opacity:.5; }
 .field-group input:disabled,.field-group select:disabled{ background:#f7f7f7; cursor:not-allowed; }
 
-/* Cabeceras sticky */
-.goals-scroll .goals-table thead th{
-  position:sticky; top:0; background:#fff; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.08);
-}
+/* Cabeceras sticky (metas/regs) */
+.goals-scroll .goals-table thead th{ position:sticky; top:0; background:#fff; z-index:2; box-shadow:0 1px 0 rgba(0,0,0,.08); }
 .goal-registros table{ width:100%; border-collapse:collapse; }
 
-/* >>> Cabecera de REGISTROS: línea visible y algo más gruesa <<< */
+/* REGISTROS: cabecera marcada y cuerpo con líneas suaves */
 .goal-registros table thead th{
-  position:sticky;
-  top:0;
-  background:#fff;
-  z-index:2;
-  border-bottom:2px solid rgba(0,0,0,.14); /* más gruesa y un pelín más oscura */
-  box-shadow:none;                         /* quitamos la sombra para evitar doble línea */
+  position:sticky; top:0; background:#fff; z-index:2;
+  border-bottom:2px solid rgba(0,0,0,.14); box-shadow:none;
 }
-
-/* Registros: sin scroll exterior (scroll va en el wrapper interno inline) */
 .goal-registros{ overflow:visible !important; max-height:none !important; }
+.goal-registros table tbody td{
+  font-size:.95rem; border-bottom:1px solid rgba(0,0,0,.08);
+  vertical-align:middle; padding-top:.10rem; padding-bottom:.3rem;
+}
+.goal-registros table tbody tr:last-child td{ border-bottom:0; }
 
-/* Ordenación tabla metas */
+/* Botón "Eliminar" en registros: más pequeño y sin negrita */
+.goal-registros .btn--danger.btn--xs{ padding:.16rem .44rem; font-size:.74rem; font-weight:400; line-height:1; }
+
+/* Ordenación (iconitos) */
 .sortable-th{ cursor:pointer; user-select:none; white-space:nowrap; }
 .sortable-th .sort-icons{ margin-left:6px; font-size:.85em; color:#777; }
 .sortable-th.active .sort-icons{ color:#333; }
 
-/* ====== Insights (derecha) ====== */
+/* ——— Insights y calendario (tal cual) ——— */
 .insight-container{ width:100%; }
 .insight-empty{ color:#777; text-align:center; }
 .insight-block{ width:100%; }
 .insight-title{ font-weight:600; margin-bottom:.5rem; display:flex; align-items:baseline; gap:.5rem; }
 .insight-title .muted{ color:#777; font-weight:400; }
 .insight-title.bump-up{ margin-top:-8px; }
-
 .insight-svg{ width:100%; height:auto; display:block; }
 .insight-svg.bump-up{ margin-top:-6px; }
 .tick{ fill:#666; font-size:.8rem; }
 .legend{ fill:#4a4a4a; font-size:.8rem; }
-
 .insight-target-line{ stroke:#7a9cff; }
 .insight-hover-line{ stroke:#90caf9; stroke-width:1.5; stroke-dasharray:4 4; }
 .insight-hover-dot{ fill:#2e7d32; stroke:#fff; stroke-width:2; }
 .insight-tooltip text{ font-size:.82rem; fill:#222; }
 .insight-tooltip-bg{ fill:#fff; stroke:#cfd8dc; }
 
-/* Calendario booleano */
 .calendar-legend{ display:flex; gap:12px; align-items:center; color:#666; font-size:.9rem; margin-bottom:.5rem; }
 .calendar-legend .dot{ width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px; background:#d0d0d0; }
 .calendar-legend .dot.ok{ background:#2e7d32; }
@@ -214,13 +213,12 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .cal-nav-btn:hover{ background:#f6f6f6; }
 .cal-nav-btn:disabled{ opacity:.45; cursor:not-allowed; }
 
-/* ====== Barra de filtros compacta (gráfico numérico) ====== */
+/* ——— Filtros (gráfico numérico) ——— */
 .filterbar{ margin-top:.5rem; display:grid; grid-template-columns:220px 1fr; gap:1rem; align-items:start; }
 .filter-chooser-title{ font-weight:700; margin-bottom:.25rem; }
 .radio-line{ display:flex; align-items:center; gap:.5rem; padding:.15rem 0; }
 .radio-line input{ transform:translateY(1px); }
 .filter-controls{ min-height:60px; display:flex; flex-direction:column; gap:.25rem; }
-
 .filter-row{ display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; }
 .filter-input,.filter-select{ padding:.45rem .55rem; border:1px solid #ccc; border-radius:6px; font-size:.95rem; }
 .filter-input.short,.filter-select.short{ width:100px; }
@@ -229,148 +227,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .filter-clear{ padding:.4rem .7rem; border:1px solid #ccc; background:#fff; border-radius:6px; cursor:pointer; }
 .filter-hint{ color:#777; font-size:.82rem; }
 
-/* ====== Botones de acciones (tabla/listas) ====== */
-.btn{
-  padding:.35rem .7rem; border-radius:8px; border:1px solid transparent;
-  font-weight:600; font-size:.9rem; cursor:pointer;
-  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
-}
-.btn--sm{ padding:.32rem .6rem; font-size:.86rem; }
-.btn--xs{ padding:.25rem .5rem; font-size:.8rem; }
-.btn--primary{ background:#1a73e8; color:#fff; box-shadow:0 1px 6px rgba(26,115,232,.18); }
-.btn--primary:hover{ background:#1669c1; }
-.btn--warn{ background:#f9a825; color:#222; }
-.btn--warn:hover{ background:#f39c12; }
-.btn--muted{ background:#e0e0e0; color:#222; }
-.btn--muted:hover{ background:#d6d6d6; }
-.btn--danger{ background:#e74c3c; color:#fff; }
-.btn--danger:hover{ background:#cf4436; }
-
-/* --- Toast felicitación primer registro (abajo-derecha) --- */
-.toast{
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  background:#fff;
-  border:1px solid #e0e0e0;
-  border-left:4px solid #2e7d32;
-  border-radius:10px;
-  box-shadow:0 10px 24px rgba(0,0,0,.12);
-  display:flex;
-  align-items:flex-start;
-  gap:.75rem;
-  padding:.75rem .9rem;
-  max-width:min(92vw, 360px);
-  opacity:0;
-  transform: translateY(8px);
-  transition: opacity .18s ease, transform .18s ease;
-  z-index: 998;
-}
-.toast.show{ opacity:1; transform:none; }
-.toast-icon{ font-size:1.35rem; line-height:1; }
-.toast-body{ display:flex; flex-direction:column; gap:.2rem; }
-.toast-title{ font-weight:700; }
-.toast-text{ color:#444; }
-.toast-close{
-  margin-left:auto;
-  border:none; background:transparent; cursor:pointer;
-  font-size:1.15rem; line-height:1; opacity:.6;
-}
-.toast-close:hover{ opacity:1; }
-
-/* Desactivar el gris por meta finalizada */
-.goal-row-finalizada { background: transparent !important; }
-
-/* PINTAR solo la fila seleccionada */
-.goal-row.selected { background: #dcdcdc; }
-.goal-row.selected:hover { background: #dcdcdc; }
-
-/* Evitar hover gris cuando no está seleccionada */
-.goals-table .goal-row:not(.selected):hover { background: transparent; }
-
-/* Botón sin borde ni recorte */
-.avatar-btn{
-  padding: 0;
-  border: none;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Foto real (Google): redonda */
-.avatar-img{
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  display: block;
-}
-
-/* Icono por defecto */
-.avatar-icon{
-  width: 32px;
-  height: 32px;
-  display: block;
-  border-radius: 0;
-  object-fit: contain;
-}
-/* Asegura que el contenedor del avatar sea el ancla del toast */
-.dashboard-header-right { position: relative; }
-
-/* TOAST arriba-derecha */
-.toast {
-  position: fixed;
-  right: 28px;
-  top: 72px;
-  bottom: auto !important;
-  max-width: min(92vw, 360px);
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-left: 4px solid #2e7d32;
-  border-radius: 10px;
-  box-shadow: 0 10px 24px rgba(0,0,0,.12);
-  display: flex;
-  align-items: flex-start;
-  gap: .75rem;
-  padding: .75rem .9rem;
-  z-index: 998;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity .18s ease, transform .18s ease;
-}
-.toast.show { opacity: 1; transform: none; }
-.toast-icon{ font-size:1.35rem; line-height:1; }
-.toast-body{ display:flex; flex-direction:column; gap:.2rem; }
-.toast-title{ font-weight:700; }
-.toast-text{ color:#444; }
-.toast-close{
-  margin-left:auto; border:none; background:transparent; cursor:pointer;
-  font-size:1.15rem; line-height:1; opacity:.6;
-}
-.toast-close:hover{ opacity:1; }
-
-/* Metas: reducir ligeramente SOLO el cuerpo de la tabla (no la cabecera) */
-.goals-table tbody td { font-size: .90rem; }
-
-/* Mantener la cabecera de metas como estaba */
-.goals-table thead th { font-size: .95rem; }
-
-/* Registros: cuerpo con líneas suaves */
-.goal-registros table tbody td{
-  font-size:.95rem;
-  border-bottom:1px solid rgba(0,0,0,.08);
-}
-.goal-registros table tbody tr:last-child td{ border-bottom:0; }
-
-/* Botón "Eliminar" en la tabla de registros: más pequeño y sin negrita */
-.goal-registros .btn--danger.btn--xs{
-  padding:.16rem .44rem;  /* un poco más compacto */
-  font-size:.74rem;       /* texto más pequeño */
-  font-weight:400;        /* aseguras sin negrita */
-}
-
-/* ===== Botones de acciones (más compactos y sin negrita en general) ===== */
+/* ——— Botones reutilizables (una sola definición) ——— */
 .btn{
   padding:.33rem .64rem;
   border-radius:8px;
@@ -380,19 +237,10 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   cursor:pointer;
   transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
 }
-.btn--sm{
-  padding:.28rem .52rem;
-  font-size:.82rem;
-}
-
-/* ===== Colores solicitados ===== */
-.btn--primary{
-  background:#7FE08A;
-  color:#fff;
-  box-shadow:0 1px 6px rgba(18, 94, 40, .18);
-}
+.btn--sm{ padding:.28rem .52rem; font-size:.82rem; }
+.btn--xs{ padding:.25rem .5rem; font-size:.8rem; }
+.btn--primary{ background:#7FE08A; color:#fff; box-shadow:0 1px 6px rgba(18, 94, 40, .18); }
 .btn--primary:hover{ background:#73d980; }
-
 .btn--warn{ background:#777FE9; color:#fff; }
 .btn--warn:hover{ background:#6b72e3; }
 .btn--muted{ background:#e0e0e0; color:#222; }
@@ -400,48 +248,31 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .btn--danger{ background:#e74c3c; color:#fff; }
 .btn--danger:hover{ background:#cf4436; }
 
-/* ===== Botón "Crear meta" → #F7B48D ===== */
-.create-goal-btn{
-  display:flex; gap:.5rem; align-items:center;
-  padding:.55rem 1rem;
-  border-radius:999px; border:none;
-  font-weight:600;
-  background:#f28749;
-  color:#fff;
-  box-shadow:0 2px 8px rgba(247,180,141,.25);
-  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
+/* ——— Toast arriba-derecha (elimino la versión duplicada) ——— */
+.dashboard-header-right{ position:relative; }
+.toast{
+  position:fixed; right:28px; top:72px;
+  background:#fff; border:1px solid #e0e0e0; border-left:4px solid #2e7d32;
+  border-radius:10px; box-shadow:0 10px 24px rgba(0,0,0,.12);
+  display:flex; align-items:flex-start; gap:.75rem; padding:.75rem .9rem;
+  max-width:min(92vw, 360px); z-index:998; opacity:0; transform:translateY(-6px);
+  transition:opacity .18s ease, transform .18s ease;
 }
-.create-goal-btn:hover{ background:#e8a67f; box-shadow:0 4px 12px rgba(247,180,141,.35); }
-.create-goal-btn:active{ transform:translateY(1px); }
+.toast.show{ opacity:1; transform:none; }
+.toast-icon{ font-size:1.35rem; line-height:1; }
+.toast-body{ display:flex; flex-direction:column; gap:.2rem; }
+.toast-title{ font-weight:700; }
+.toast-text{ color:#444; }
+.toast-close{ margin-left:auto; border:none; background:transparent; cursor:pointer; font-size:1.15rem; line-height:1; opacity:.6; }
+.toast-close:hover{ opacity:1; }
 
-/* --- Estadísticas compactas --- */
-.right-pane .user-stats.card{ padding:.5rem .75rem; }
-.user-stats .stats-title{ margin:0 0 .25rem 0; font-size:1.1rem; }
-.stats-content{
-  display:flex; align-items:baseline; gap:1.2rem; text-align:left; flex-wrap:wrap;
-}
-.stats-content p{ margin:0; color:#666; font-size:.9rem; }
-.stats-content strong{ font-size:1.05rem; }
-.stats-content .stats-percent{ margin-left:auto; white-space:nowrap; }
-.user-stats .stats-content p:not(.stats-percent){
-  display:flex; flex-direction:column; align-items:center; text-align:center; min-width:96px;
-}
-.user-stats .stats-content p:not(.stats-percent) strong{ margin-top:.15rem; }
+/* Selección de filas (solo la seleccionada se pinta, el resto no cambia) */
+.goal-row-finalizada{ background:transparent !important; }
+.goal-row.selected{ background:#dcdcdc; }
+.goal-row.selected:hover{ background:#dcdcdc; }
+.goals-table .goal-row:not(.selected):hover{ background:transparent; }
 
-.streak-info{ margin-top:8px; text-align:center; color:#444; font-size:14px; }
-.streak-info strong{ font-weight:600; }
-.streak-flame{ position:relative; display:inline-block; width:22px; height:22px; vertical-align:-4px; opacity:.7; }
-.streak-flame img{ width:100%; height:100%; display:block; }
-.streak-flame .num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; color:#222; pointer-events:none; }
-
-/* Centrado vertical y separación simétrica en filas de REGISTROS */
-.goal-registros table tbody td{
-  vertical-align: middle;
-  padding-top: .10rem;   /* misma distancia arriba */
-  padding-bottom: .3rem;/* y abajo */
-}
-
-/* Botón "Eliminar" aún más estable en vertical */
-.goal-registros .btn--danger.btn--xs{
-  line-height: 1;        /* evita que la línea base empuje hacia arriba */
-}
+/* ——— Login: modal de reset (scopeado) ——— */
+.login-page .modal--reset{ max-width:480px; width:min(92vw,480px); box-sizing:border-box; }
+.login-page .modal-body--reset{ overflow-x:hidden; }
+.login-page .reset-field{ max-width:360px; margin-inline:auto; display:block; }

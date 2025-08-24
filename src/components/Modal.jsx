@@ -4,13 +4,16 @@ export default function Modal({
                                   open,
                                   title,
                                   children,
-                                  onClose,                 // usado para “Denegar” y para cerrar con overlay/X
+                                  onClose,                 // usado para “Cerrar/Cancelar” y overlay
                                   onAccept,
                                   acceptText = 'Aceptar',
-                                  denyText = 'Denegar',
+                                  denyText = 'Cerrar',
                                   requireScroll = false,
                                   showDenyButton = true,
-                                  showCloseIcon = true,    // ← NUEVO: muestra la “X”
+                                  showCloseIcon = true,
+                                  // ⬇️ NUEVO: clases para este modal concreto
+                                  dialogClassName = '',
+                                  bodyClassName = '',
                               }) {
     const boxRef = useRef(null);
     const [canAccept, setCanAccept] = useState(!requireScroll);
@@ -22,6 +25,7 @@ export default function Modal({
     if (!open) return null;
 
     const handleScroll = () => {
+        if (!requireScroll) return;
         const el = boxRef.current;
         if (!el) return;
         const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
@@ -30,8 +34,12 @@ export default function Modal({
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-                {/* Botón X */}
+            <div
+                className={`modal ${dialogClassName}`}
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+            >
                 {showCloseIcon && onClose && (
                     <button
                         type="button"
@@ -47,6 +55,7 @@ export default function Modal({
 
                 <div
                     ref={boxRef}
+                    className={`modal-body ${bodyClassName}`}
                     onScroll={handleScroll}
                     style={{ maxHeight: '50vh', overflow: 'auto', paddingRight: '.5rem' }}
                 >
@@ -56,7 +65,7 @@ export default function Modal({
                 <div className="modal-actions">
                     {showDenyButton && onClose && (
                         <button className="back-btn" onClick={onClose}>
-                            {denyText || 'Cerrar'}
+                            {denyText}
                         </button>
                     )}
                     {typeof onAccept === 'function' && (

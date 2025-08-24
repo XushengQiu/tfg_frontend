@@ -1,6 +1,6 @@
 // src/components/GoalInsight.jsx
 import React, { useMemo, useState, useRef } from "react";
-import flameGif from "../assets/icons/flame.gif";
+import flameGIF from "../assets/icons/flame.gif";
 
 /* ---------------------- helpers ---------------------- */
 
@@ -14,8 +14,8 @@ function roundNicely(n) {
 }
 
 const MONTHS = [
-    "enero", "febrero", "marzo", "abril", "mayo", "junio",
-    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    "enero","febrero","marzo","abril","mayo","junio",
+    "julio","agosto","septiembre","octubre","noviembre","diciembre"
 ];
 
 function toISO(y, m, d) {
@@ -31,8 +31,8 @@ function parseISO(s) {
     return new Date(y, m - 1, d);
 }
 function fmtMonth(y, m) { return `${MONTHS[m]} ${y}`; }
-function fmtDDMM(iso) { return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`; }
-function fmtDDMMYYYY(iso) { return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`; }
+function fmtDDMM(iso) { return `${iso.slice(8,10)}/${iso.slice(5,7)}`; }
+function fmtDDMMYYYY(iso) { return `${iso.slice(8,10)}/${iso.slice(5,7)}/${iso.slice(0,4)}`; }
 
 // utilidades de año/mes
 function addMonths({ y, m }, delta) {
@@ -54,6 +54,7 @@ function weekCountInMonth(year, month1) {
     const days = new Date(y, m0 + 1, 0).getDate();
     return Math.ceil((firstWeekday + days) / 7);
 }
+// ── rango de la semana N (1..sem) de un mes, con semanas que empiezan en LUNES ──
 function weekRangeOfMonth(year, month1, weekIndex) {
     const y = year, m0 = month1 - 1;
     const first = new Date(y, m0, 1);
@@ -62,7 +63,6 @@ function weekRangeOfMonth(year, month1, weekIndex) {
     const firstMonday = firstWeekday === 0 ? 1 : (8 - firstWeekday);
 
     let startDay, endDay;
-
     if (firstMonday === 1) {
         startDay = 1 + 7 * (weekIndex - 1);
         endDay   = Math.min(daysInMonth, startDay + 6);
@@ -77,6 +77,7 @@ function weekRangeOfMonth(year, month1, weekIndex) {
 
     return { start: toISO(y, month1, startDay), end: toISO(y, month1, endDay) };
 }
+
 function computePeriodRange(mode, year, month1, weekIndex) {
     if (mode === "anio")   return { start: toISO(year, 1, 1), end: toISO(year, 12, 31) };
     if (mode === "mes")    return { start: toISO(year, month1, 1), end: toISO(year, month1, new Date(year, month1, 0).getDate()) };
@@ -396,6 +397,9 @@ function NumericChart({ goal }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selMonth, selYear, periodMode]);
 
+    // utilidades para deshabilitar meses anteriores al inicio
+    const minMonthForYear = selYear === yearMin ? (minDate.getMonth() + 1) : 1;
+
     return (
         <div className="insight-block">
             {/* Título + rango visible a la derecha */}
@@ -572,7 +576,7 @@ function NumericChart({ goal }) {
                                 >
                                     {MONTHS.map((m, i) => {
                                         const monthValue = i + 1;
-                                        const disabled = selYear === yearMin && monthValue < (minDate.getMonth() + 1);
+                                        const disabled = selYear === yearMin && monthValue < minMonthForYear;
                                         return <option key={i} value={monthValue} disabled={disabled}>{m}</option>;
                                     })}
                                 </select>
@@ -587,10 +591,11 @@ function NumericChart({ goal }) {
                                 >
                                     {Array.from({ length: weeksInSelMonth }).map((_, i) => {
                                         const num = i + 1;
+                                        // opcional: deshabilitar semanas totalmente anteriores al inicio cuando coincide año/mes
                                         let disabled = false;
                                         if (selYear === yearMin && selMonth === (minDate.getMonth() + 1)) {
                                             const r = weekRangeOfMonth(selYear, selMonth, num);
-                                            if (r.end < isoFromDate(minDate)) disabled = true;
+                                            if (r.end < minISO) disabled = true;
                                         }
                                         const text = num === weeksInSelMonth ? "Última semana" : `${num}º Semana`;
                                         return <option key={num} value={num} disabled={disabled}>{text}</option>;
@@ -599,7 +604,7 @@ function NumericChart({ goal }) {
                             )}
 
                             <div className="filter-hint">
-                                {isNumIndef ? <>A partir de {isoFromDate(minDate)}.</> : <>Dentro de {isoFromDate(minDate)} a {maxISO}.</>}
+                                {isNumIndef ? <>A partir de {minISO}.</> : <>Dentro de {minISO} a {maxISO}.</>}
                             </div>
                         </div>
                     )}
@@ -634,7 +639,7 @@ function NumericChart({ goal }) {
     );
 }
 
-/* ---------------------- Calendario Bool + Racha ---------------------- */
+/* ---------------------- Calendario Bool (Indef: hasta mes actual o hasta mes del último registro si es posterior) ---------------------- */
 
 function BooleanCalendar({ goal }) {
     const map = useMemo(() => {
@@ -705,34 +710,37 @@ function BooleanCalendar({ goal }) {
     }
     while (cells.length % 7 !== 0) cells.push({ type: "pad" });
 
-    // ---- rachas (última de Sí y última de No) ----
-    const computeLastStreakFor = React.useCallback((wanted) => {
-        const keys = Array.from(map.keys()).filter((k) => map.get(k) === wanted);
-        if (keys.length === 0) return { count: 0, latest: null };
+    // ---- cálculo de racha (streak) ----
+    const streak = useMemo(() => {
+        // si no hay registros válidos, no mostramos nada
+        const keys = Array.from(map.keys());
+        if (keys.length === 0) return null;
 
-        // último día con ese valor
+        // último registro (ISO mayor)
         const latestISO = keys.reduce((max, k) => (k > max ? k : max), keys[0]);
+        const lastVal = map.get(latestISO);
+        if (typeof lastVal !== "boolean") return null;
+
         let count = 0;
         let cursor = parseISO(latestISO);
-
+        const wanted = lastVal;
         while (true) {
             const iso = isoFromDate(cursor);
-            if (map.get(iso) === wanted) {
+            const v = map.get(iso);
+            if (v === wanted) {
                 count += 1;
-                cursor.setDate(cursor.getDate() - 1); // día anterior
+                // avanzar un día hacia atrás
+                cursor.setDate(cursor.getDate() - 1);
             } else {
-                break; // cambia el valor o falta el día
+                break; // distinto estado o día sin registro → fin de racha
             }
         }
-        return { count, latest: latestISO };
+
+        return {
+            label: wanted ? "Sí" : "No",
+            count
+        };
     }, [map]);
-
-    const streakSi = useMemo(() => computeLastStreakFor(true),  [computeLastStreakFor]);
-    const streakNo = useMemo(() => computeLastStreakFor(false), [computeLastStreakFor]);
-
-    // selección del usuario (por defecto: Sí)
-    const [streakKind, setStreakKind] = useState("si");
-    const shownCount = streakKind === "si" ? (streakSi?.count ?? 0) : (streakNo?.count ?? 0);
 
     return (
         <div className="insight-block calendar-block">
@@ -770,66 +778,48 @@ function BooleanCalendar({ goal }) {
                 <button className="cal-nav-btn" onClick={goNext} disabled={!canNext} aria-label="Mes siguiente">›</button>
             </div>
 
-            {/* Controles y visualización de racha */}
-            <div style={{ marginTop: 12 }}>
-                <div
-                    className="streak-controls"
-                    style={{ display: "flex", alignItems: "center", gap: 10, color: "#333", marginBottom: 6 }}
-                >
-                    <span>Ver última racha de:</span>
-                    <label className="radio-line">
-                        <input
-                            type="radio"
-                            name="streakKind"
-                            checked={streakKind === "si"}
-                            onChange={() => setStreakKind("si")}
-                        />
-                        <span> Sí</span>
-                    </label>
-                    <label className="radio-line">
-                        <input
-                            type="radio"
-                            name="streakKind"
-                            checked={streakKind === "no"}
-                            onChange={() => setStreakKind("no")}
-                        />
-                        <span> No</span>
-                    </label>
-                </div>
-
+            {/* Racha */}
+            {streak && (
                 <div
                     className="streak-row"
-                    style={{ display: "flex", alignItems: "center", gap: 6, color: "#333" }}
+                    style={{
+                        marginTop: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "#333"
+                    }}
                 >
                     <span>Llevas una racha de</span>
+                    <strong>{streak.label}</strong>
                     <span
                         className="streak-badge"
-                        aria-label={`Racha de ${shownCount} días`}
+                        aria-label={`Racha de ${streak.count} días`}
                         style={{ position: "relative", display: "inline-block", width: 26, height: 26, verticalAlign: "middle" }}
                     >
-            <img
-                src={flameGif}
-                alt=""
-                aria-hidden="true"
-                style={{ width: "100%", height: "100%", opacity: 0.5 }}
-            />
-            <span
-                className="streak-count"
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700
-                }}
-            >
-              {shownCount}
-            </span>
-          </span>
+                        <img
+                            src={flameGIF}
+                            alt=""
+                            aria-hidden="true"
+                            style={{ width: "100%", height: "100%", opacity: 0.5 }}
+                        />
+                        <span
+                            className="streak-count"
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700
+                            }}
+                        >
+                            {streak.count}
+                        </span>
+                    </span>
                     <span>días</span>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
