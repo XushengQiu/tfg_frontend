@@ -9,6 +9,7 @@ import Modal from "../components/Modal";
 import TermsContent from "../components/TermsContent";
 import DataPolicyContent from "../components/DataPolicyContent";
 import "../index.css";
+import appLogo from "../assets/icons/logo.svg";
 
 const apiError = (err, fallback) => {
     const res = err?.response;
@@ -89,7 +90,7 @@ export default function Profile() {
         e.preventDefault();
         const body = {};
         if (form.nombre.trim() && form.nombre !== profile.nombre) body.nombre = form.nombre.trim();
-        if (form.apellidos !== profile.apellidos) body.apellidos = (form.apellidos ?? "").trim();
+        if (form.Apellidos !== profile?.Apellidos && form.apellidos !== profile.apellidos) body.apellidos = (form.apellidos ?? "").trim();
 
         if (Object.keys(body).length === 0) { setEditOpen(false); return; }
 
@@ -129,6 +130,7 @@ export default function Profile() {
                 </button>
             </header>
 
+            {/* (CAMBIO) quitamos el recuadro; mantenemos solo el contenido */}
             <main className="profile-card">
                 <p><strong>Nombre:</strong> {profile?.nombre}</p>
                 <p><strong>Apellidos:</strong> {profile?.apellidos || "—"}</p>
@@ -141,11 +143,16 @@ export default function Profile() {
                 <button className="delete-btn" onClick={() => setConfirm(true)}>Eliminar cuenta</button>
             </footer>
 
+            {/* Accesos legales (CAMBIO: más separación y margen ya aplicado en CSS) */}
             <div className="legal-fabs" aria-label="Accesos legales">
                 <button type="button" className="legal-fab" onClick={() => setLegalOpen("terms")}>Términos y condiciones</button>
                 <button type="button" className="legal-fab" onClick={() => setLegalOpen("data")}>Tratamiento de datos</button>
             </div>
 
+            {/* Logo fijo en esquina inferior izquierda */}
+            <img src={appLogo} alt="GoLife logo" className="corner-logo" />
+
+            {/* Modal editar */}
             {editOpen && (
                 <div className="modal-overlay" onClick={() => setEditOpen(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -180,10 +187,14 @@ export default function Profile() {
                 </div>
             )}
 
+            {/* Confirmación de borrado */}
             {confirm && (
                 <div className="modal-overlay">
                     <div className="modal">
-                        <p>¿Estás seguro de querer eliminar esta cuenta?<br />Esta acción es irreversible.</p>
+                        <p>
+                            ¿Estás seguro de querer <strong>ELIMINAR</strong> esta cuenta?<br />
+                            Esta acción es irreversible.
+                        </p>
                         <div className="modal-actions">
                             <button className="delete-btn" disabled={timer > 0} onClick={handleDelete}>
                                 {timer > 0 ? `Eliminar cuenta (${timer})` : "Eliminar cuenta"}
@@ -194,6 +205,7 @@ export default function Profile() {
                 </div>
             )}
 
+            {/* Error genérico */}
             {error && (
                 <div className="modal-overlay">
                     <div className="modal">
@@ -203,6 +215,7 @@ export default function Profile() {
                 </div>
             )}
 
+            {/* Legales */}
             <Modal
                 open={legalOpen === "terms"}
                 title="Términos y condiciones"

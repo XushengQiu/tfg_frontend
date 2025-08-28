@@ -69,9 +69,16 @@ export default function Dashboard() {
     const [error, setError] = useState("");
     const [isCreating, setIsCreating] = useState(false); // evitar doble click en "Crear"
 
+    // ── Buscador (filtra solo por nombre, visualmente) ──────────
+    const [search, setSearch] = useState("");
+
     // ── Ordenación ──────────────────────────────────────────────
     const [sortKey, setSortKey] = useState(null);     // 'nombre' | 'fecha' | 'periodo' | null
     const [sortDir, setSortDir] = useState("asc");    // 'asc' | 'desc'
+
+    // NUEVO: refs para header y título (para escribir --title-w)
+    const headerRef = useRef(null);
+    const titleRef  = useRef(null);
 
     const toggleSort = (key) => {
         setSortDir((prevDir) =>
@@ -138,6 +145,32 @@ export default function Dashboard() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadData]);
+
+    // NUEVO: fija la CSS var --title-w con el ancho real del <h1> y re-calcula en cambios
+    useEffect(() => {
+        const headerEl = headerRef.current;
+        const titleEl  = titleRef.current;
+        if (!headerEl || !titleEl) return;
+
+        const setVar = () => {
+            const w = titleEl.getBoundingClientRect().width || titleEl.offsetWidth || 0;
+            headerEl.style.setProperty('--title-w', `${Math.round(w)}px`);
+        };
+
+        setVar();                                  // primera medición
+        const ro = new ResizeObserver(setVar);     // si cambia el tamaño del <h1>
+        ro.observe(titleEl);
+
+        window.addEventListener('resize', setVar); // al redimensionar ventana
+        if (document.fonts?.ready) {
+            document.fonts.ready.then(setVar).catch(() => {});
+        }
+
+        return () => {
+            ro.disconnect();
+            window.removeEventListener('resize', setVar);
+        };
+    }, []);
 
     // Asegura traer REGISTROS (detalle) cuando haga falta
     const ensureGoalDetail = useCallback(
@@ -331,7 +364,6 @@ export default function Dashboard() {
         }
     };
 
-
     const handleDeleteRecord = (goalId, fechaISO) =>
         openConfirm({
             title: "Eliminar registro",
@@ -516,9 +548,16 @@ export default function Dashboard() {
 
     const iconFor = (key) => (sortKey !== key ? "⇅" : sortDir === "asc" ? "▲" : "▼");
 
-    // Ordenación memorizada
+    // Filtrado por buscador (nombre) antes de ordenar
+    const goalsFiltered = useMemo(() => {
+        const t = search.trim().toLowerCase();
+        if (!t) return goals;
+        return goals.filter((g) => (g.nombre || "").toLowerCase().includes(t));
+    }, [goals, search]);
+
+    // Ordenación memorizada (sobre filtrados)
     const goalsSorted = useMemo(() => {
-        const arr = [...goals];
+        const arr = [...goalsFiltered];
         if (!sortKey) return arr;
 
         arr.sort((a, b) => {
@@ -542,7 +581,7 @@ export default function Dashboard() {
         });
 
         return arr;
-    }, [goals, sortKey, sortDir]);
+    }, [goalsFiltered, sortKey, sortDir]);
 
     // Selección por defecto: primera meta visible (solo una vez al entrar)
     const didAutoSelectRef = useRef(false);
@@ -563,15 +602,11 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard-wrapper">
-            <header className="dashboard-header">
-                <h1 className="dashboard-title">Mis metas</h1>
+            <header ref={headerRef} className="dashboard-header">
+                <h1 ref={titleRef} className="dashboard-title">Mis metas</h1>
 
-                {/* CENTRO */}
-                <div className="dashboard-header-center">
-                    <button className="create-goal-btn" onClick={() => setOpenNew(true)}>
-                        Crear meta
-                    </button>
-                </div>
+                {/* CENTRO (vacío a propósito para no mover layout) */}
+                <div className="dashboard-header-center" />
 
                 {/* DERECHA */}
                 <div className="dashboard-header-right">
@@ -588,6 +623,25 @@ export default function Dashboard() {
                             src={user?.photoURL || profileIcon}
                             alt="perfil"
                         />
+                    </button>
+                </div>
+
+                {/* ——— Buscador flotando bajo el header ——— */}
+                <div className="dash-search" role="search" aria-label="Buscar metas por nombre">
+                    <input
+                        className="dash-search__input"
+                        type="text"
+                        value={search}
+                        placeholder="Buscar metas por nombre…"
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <button
+                        className="filter-clear dash-search__clear"
+                        onClick={() => setSearch("")}
+                        disabled={!search}
+                        title="Limpiar búsqueda"
+                    >
+                        Limpiar
                     </button>
                 </div>
             </header>
@@ -653,6 +707,14 @@ export default function Dashboard() {
                             </table>
                         </div>
                     </div>
+
+                    {/* FAB dentro del panel izquierdo, flotando sobre la unión tabla/detalle */}
+                    <button
+                        className="create-goal-btn create-goal-btn--float"
+                        onClick={() => setOpenNew(true)}
+                    >
+                        Crear meta
+                    </button>
 
                     <GoalDetail
                         goal={selectedGoal}
