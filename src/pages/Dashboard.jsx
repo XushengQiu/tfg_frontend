@@ -5,6 +5,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
 import { capitalize as cap, fmtFecha } from "../utils/format";
+import appLogo from "../assets/icons/logo.svg";
 
 import {
     getProfile,
@@ -252,7 +253,8 @@ export default function Dashboard() {
     };
 
     /* ───────────────── Confirmación modal genérica ─────────────── */
-    const [confirmDlg, setConfirmDlg] = useState(null); // {title, message, confirmText, cancelText, confirmClass, onConfirm}
+    // Añadimos cancelClass para poder personalizar el botón "Cancelar" cuando haga falta
+    const [confirmDlg, setConfirmDlg] = useState(null); // {title, message, confirmText, cancelText, confirmClass, cancelClass, onConfirm}
     const [confirmBusy, setConfirmBusy] = useState(false);
     const openConfirm = (cfg) =>
         setConfirmDlg({
@@ -261,6 +263,7 @@ export default function Dashboard() {
             confirmText: "Aceptar",
             cancelText: "Cancelar",
             confirmClass: "back-btn", // por defecto botón naranja
+            cancelClass: "back-btn",
             ...cfg,
         });
 
@@ -289,9 +292,11 @@ export default function Dashboard() {
     const handleFinalize = (id) =>
         openConfirm({
             title: "Finalizar meta",
-            message: "¿Marcar esta meta como COMPLETADA?",
+            message: "¿Marcar esta meta como COMPLETADA?\nEsta acción es irreversible.",
             confirmText: "Aceptar",
-            confirmClass: "back-btn", // naranja
+            confirmClass: "btn-soft-success", // verde suave #63db60
+            cancelText: "Cancelar",
+            cancelClass: "btn-soft-danger",   // rojo suave #c4374c
             onConfirm: async () => await doFinalize(id),
         });
 
@@ -333,7 +338,7 @@ export default function Dashboard() {
             title: "Eliminar meta",
             message: "¿Eliminar esta meta?",
             confirmText: "Eliminar",
-            confirmClass: "delete-btn", // rojo
+            confirmClass: "delete-btn", // rojo actual
             onConfirm: async () => await doDeleteGoal(id),
         });
 
@@ -460,69 +465,6 @@ export default function Dashboard() {
         }
     };
 
-    /* -------------------- EDITAR META -------------------- */
-    const openEditModal = (g) => setEditGoal(g);
-
-    const handleSaveEdit = async (form) => {
-        if (!editGoal) return;
-
-        const body = {};
-        if (form.nombre?.trim() && form.nombre !== editGoal.nombre)
-            body.nombre = form.nombre.trim();
-        if ((form.descripcion ?? "").trim() !== (editGoal.descripcion ?? ""))
-            body.descripcion = (form.descripcion ?? "").trim();
-
-        const newIndef = form.periodoIndef;
-        const newVal = newIndef ? 1 : Number(form.periodoNum);
-        const newUnit = newIndef ? "Indefinido" : cap(form.periodoUnit);
-        if (newUnit !== editGoal.duracionUnidad || newVal !== editGoal.duracionValor) {
-            body.duracionValor = newVal;
-            body.duracionUnidad = newUnit;
-        }
-
-        if (editGoal.tipo === "Num") {
-            const valObj = Number(form.objetivoNum);
-            if (!Number.isNaN(valObj) && valObj !== editGoal.valorObjetivo)
-                body.valorObjetivo = valObj;
-            if ((form.objetivoUnidad ?? "").trim() && form.objetivoUnidad !== editGoal.unidad)
-                body.unidad = form.objetivoUnidad.trim();
-        }
-
-        if (Object.keys(body).length === 0) return setEditGoal(null);
-
-        try {
-            const res =
-                editGoal.tipo === "Bool"
-                    ? await updateGoalBool(editGoal._id, body)
-                    : await updateGoalNum(editGoal._id, body);
-
-            // actualiza localmente con lo que pediste
-            const locallyUpdated = { ...editGoal, ...body };
-            setGoals((curr) =>
-                curr.map((g) => (g._id === editGoal._id ? { ...g, ...locallyUpdated } : g))
-            );
-            syncSelected(locallyUpdated);
-            setEditGoal(null);
-
-            const payload = res?.data ?? {};
-            if (payload.estadisticas || payload.estadisticasUsuario) {
-                setStats(payload.estadisticas ?? payload.estadisticasUsuario);
-            }
-            if (payload.meta) {
-                upsertGoal(payload.meta);
-                syncSelected(payload.meta);
-            } else if (Array.isArray(payload.metas)) {
-                const fromServer = payload.metas.find((m) => m._id === locallyUpdated._id);
-                if (fromServer) {
-                    upsertGoal(fromServer);
-                    syncSelected(fromServer);
-                }
-            }
-        } catch (e) {
-            setError(apiError(e, "No se pudo actualizar la meta."));
-        }
-    };
-
     // ── Comparadores para ordenación ─────────────────────────────
     const startMillis = (g) => {
         const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
@@ -603,7 +545,10 @@ export default function Dashboard() {
     return (
         <div className="dashboard-wrapper">
             <header ref={headerRef} className="dashboard-header">
-                <h1 ref={titleRef} className="dashboard-title">Mis metas</h1>
+                <h1 ref={titleRef} className="dashboard-title">
+                    <img src={appLogo} alt="" className="title-logo" aria-hidden="true" />
+                    Mis metas
+                </h1>
 
                 {/* CENTRO (vacío a propósito para no mover layout) */}
                 <div className="dashboard-header-center" />
@@ -699,7 +644,7 @@ export default function Dashboard() {
                                         }}
                                         onEntry={(goal) => setEntryGoal(goal)}
                                         onFinalize={handleFinalize}
-                                        onEdit={(goal) => openEditModal(goal)}
+                                        onEdit={(goal) => setEditGoal(goal)}
                                         onDelete={handleDelete}
                                     />
                                 ))}
@@ -738,8 +683,9 @@ export default function Dashboard() {
                                     <br />
                                     <strong>{stats.totalMetasFinalizadas}</strong>
                                 </p>
-                                <p style={{ gridColumn: "1 / -1" }}>
-                                    Porcentaje finalizadas:{" "}
+                                <p>
+                                    Porcentaje finalizadas
+                                    <br />
                                     <strong>{stats.porcentajeFinalizadas}%</strong>
                                 </p>
                             </div>
@@ -771,16 +717,23 @@ export default function Dashboard() {
                 open={!!editGoal}
                 goal={editGoal}
                 onClose={() => setEditGoal(null)}
-                onSave={handleSaveEdit}
+                onSave={(form) => {
+                    // Pasamos tal cual; el Dashboard ya construye el body con diffs
+                    const f = { ...form };
+                    return handleSaveEdit(f);
+                }}
             />
 
             {error && (
                 <div className="modal-overlay">
-                    <div className="modal">
+                    <div className="modal" role="dialog" aria-modal="true">
+                        <h2>Error</h2>
                         <p>{error}</p>
-                        <button className="back-btn" onClick={() => setError("")}>
-                            Volver
-                        </button>
+                        <div className="modal-actions">
+                            <button className="back-btn" onClick={() => setError("")}>
+                                Volver
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -790,8 +743,15 @@ export default function Dashboard() {
                 <div className="modal-overlay">
                     <div className="modal" role="dialog" aria-modal="true">
                         {confirmDlg.title ? <h2>{confirmDlg.title}</h2> : null}
-                        <p style={{ marginTop: 0 }}>{confirmDlg.message}</p>
-                        <div className="modal-actions">
+                        <p className="modal-msg">{confirmDlg.message}</p>
+                        <div className="modal-actions" style={{ justifyContent: "space-between" }}>
+                            <button
+                                className={confirmDlg.cancelClass || "back-btn"}
+                                disabled={confirmBusy}
+                                onClick={() => setConfirmDlg(null)}
+                            >
+                                {confirmDlg.cancelText || "Cancelar"}
+                            </button>
                             <button
                                 className={confirmDlg.confirmClass || "back-btn"}
                                 disabled={confirmBusy}
@@ -807,13 +767,6 @@ export default function Dashboard() {
                                 }}
                             >
                                 {confirmBusy ? "..." : confirmDlg.confirmText || "Aceptar"}
-                            </button>
-                            <button
-                                className="back-btn"
-                                disabled={confirmBusy}
-                                onClick={() => setConfirmDlg(null)}
-                            >
-                                {confirmDlg.cancelText || "Cancelar"}
                             </button>
                         </div>
                     </div>

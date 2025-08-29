@@ -248,7 +248,16 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .login-legal{ margin-top:auto; padding:1rem 0 2rem; font-size:.85rem; color:#666; text-align:center; }
 
 /* ——— Dashboard (layout general) ——— */
-.dashboard-wrapper{ height:100%; min-height:100vh; display:flex; flex-direction:column; gap:1rem; padding-top:.5rem; padding-bottom:1rem; }
+.dashboard-wrapper{
+  height:100%;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  gap:1rem;
+  padding-top:.5rem;
+  padding-bottom:1rem;
+  background: var(--bg-soft);    /* (CAMBIO) fondo del dashboard */
+}
 
 /* Header: centrado sin tocar estructura */
 .dashboard-header{
@@ -267,7 +276,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 /* Buscador: anclado SIEMPRE al borde derecho del header */
 .dash-search{
   position: absolute;
-  left: calc(28px + var(--title-w, 260px) + 63px); /* justo a la derecha del título */
+  left: calc(28px + var(--title-w, 260px) + 60px); /* justo a la derecha del título */
   top: 14px;             /* ligeramente por debajo del título */
   right: auto;
   bottom: auto;
@@ -293,9 +302,11 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 /* CTA "Crear meta" */
 .create-goal-btn{
   display:flex; gap:.5rem; align-items:center;
-  padding:.55rem 1rem; border-radius:999px; border:none; font-weight:600;
+  padding:.55rem 1rem; border-radius:999px; font-weight:600;
   background:#f28749; color:#fff; box-shadow:0 2px 8px rgba(247,180,141,.25);
   transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
+  border:1px solid #d9743b;                 /* (CAMBIO) borde más oscuro sin desplazar */
+  box-sizing:border-box;                     /* asegura que no cambie el tamaño total */
 }
 .create-goal-btn:hover{ background:#e8a67f; box-shadow:0 4px 12px rgba(247,180,141,.35); }
 .create-goal-btn:active{ transform:translateY(1px); }
@@ -370,7 +381,12 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 
 /* Panel derecha */
 .user-stats{ flex:0 0 auto; background:#f8f8f8; border-radius:10px; }
-.stats-content{ display:grid; grid-template-columns:repeat(2,1fr); textAlign:center; gap:1rem; }
+.stats-content{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr); /* tres columnas en una línea */
+  text-align:center;                     /* (antes estaba como textAlign y no aplica) */
+  gap:1rem;
+}
 .stats-content p{ color:#666; margin:0; }
 .stats-content strong{ font-size:1.25rem; }
 .placeholder{ flex:1 1 auto; display:flex; align-items:center; justify-content:center; }
@@ -383,7 +399,7 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 /* REGISTROS: cabecera marcada y cuerpo con líneas suaves */
 .goal-registros table thead th{
   position:sticky; top:0; background:#fff; z-index:2;
-  border-bottom:2px solid rgba(0,0,0,.14); box-shadow:none;
+  border-bottom:2px solid rgba(0,0,0,14%); box-shadow:none;
 }
 .goal-registros{ overflow:visible !important; max-height:none !important; }
 .goal-registros table tbody td{
@@ -453,22 +469,27 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .btn{
   padding:.33rem .64rem;
   border-radius:8px;
-  border:1px solid transparent;
+  border:1px solid transparent;   /* mantiene el tamaño: sin “saltos” al cambiar color */
   font-weight:400;
   font-size:.88rem;
   cursor:pointer;
-  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease;
+  transition:transform .04s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease;
 }
 .btn--sm{ padding:.28rem .52rem; font-size:.82rem; }
 .btn--xs{ padding:.25rem .5rem; font-size:.8rem; }
-.btn--primary{ background:#7FE08A; color:#fff; box-shadow:0 1px 6px rgba(18, 94, 40, .18); }
-.btn--primary:hover{ background:#73d980; }
-.btn--warn{ background:#777FE9; color:#fff; }
-.btn--warn:hover{ background:#6b72e3; }
-.btn--muted{ background:#e0e0e0; color:#222; }
-.btn--muted:hover{ background:#d6d6d6; }
-.btn--danger{ background:#e74c3c; color:#fff; }
-.btn--danger:hover{ background:#cf4436; }
+
+/* (CAMBIO) BORDES EN LOS BOTONES DE ACCIONES DEL DASHBOARD */
+.btn--primary{ background:#7FE08A; color:#fff; box-shadow:0 1px 6px rgba(18, 94, 40, .18); border-color:#5fcf74; }
+.btn--primary:hover{ background:#73d980; border-color:#58c66e; }
+
+.btn--warn{ background:#777FE9; color:#fff; border-color:#6269d8; }
+.btn--warn:hover{ background:#6b72e3; border-color:#5a61cf; }
+
+.btn--muted{ background:#e0e0e0; color:#222; border-color:#c8c8c8; }
+.btn--muted:hover{ background:#d6d6d6; border-color:#bebebe; }
+
+.btn--danger{ background:#e74c3c; color:#fff; border-color:#c44134; }
+.btn--danger:hover{ background:#cf4436; border-color:#b83b2e; }
 
 /* ——— Toast arriba-derecha ——— */
 .dashboard-header-right{ position:relative; }
@@ -570,3 +591,92 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 }
 .onboarding-submit:active{ transform: translateY(1px); }
 .onboarding-submit:disabled{ opacity:.6; cursor:progress; }
+
+/* Logo delante de "Mis metas" */
+.dashboard-title .title-logo{
+  height: 1.2em;          /* ↑ un pelín más grande (antes 1em) */
+  width: auto;
+  display: inline-block;
+  margin-right: .5rem;
+  vertical-align: middle;
+  transform: translateY(-4px); /* ↑ súbelo 2px; ajusta a tu gusto (-1px/-3px) */
+}
+
+/* ========== AJUSTES PARA MODALES (añadidos) ========== */
+
+/* 3.1) Inputs deshabilitados “opacos” (p.ej., cuando periodo = Indefinido) */
+.modal input:disabled,
+.modal select:disabled,
+.modal textarea:disabled{
+  background: #f5f7f8;
+  color: #666;
+  opacity: .85;
+  cursor: not-allowed;
+}
+
+/* 3.2) Más espacio entre título y texto del modal (fallback general) */
+.modal h2{ margin: 0 0 .75rem 0; }
+.modal .modal-msg{ margin-top: .25rem; white-space: pre-line; } /* respeta el salto de línea de Finalizar */
+
+/* 3.3) Botones suaves para confirmaciones/acciones clave */
+.btn-soft-success{
+  background: #63db60;            /* verde suave */
+  color: #fff;
+  border: 1px solid #3ea63c;      /* tono más oscuro en el borde */
+  padding: .6rem 1.1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15); /* ligera sombra como en Profile */
+  transition: transform .04s ease, filter .15s ease;
+}
+.btn-soft-success:hover{ filter: brightness(.97); }
+.btn-soft-success:active{ transform: translateY(1px); }
+
+.btn-soft-danger{
+  background: #c4374c;            /* rojo suave */
+  color: #fff;
+  border: 1px solid #a02c3e;      /* borde un tono más oscuro */
+  padding: .6rem 1.1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  transition: transform .04s ease, filter .15s ease;
+}
+.btn-soft-danger:hover{ filter: brightness(.97); }
+.btn-soft-danger:active{ transform: translateY(1px); }
+
+/* ———————————————————————————————————————————
+   + Espaciado vertical dentro de formularios de modales
+   (afecta Editar meta y Crear meta)
+   ——————————————————————————————————————————— */
+.modal form{
+  display: flex;
+  flex-direction: column;
+  row-gap: .95rem;   /* antes casi sin separación → + aire entre líneas */
+}
+
+/* Si algún input va deshabilitado (p.ej. "Indefinido"), que se note */
+.modal input:disabled,
+.modal select:disabled,
+.modal textarea:disabled{
+  background: #f5f7f8;
+  color: #6b7280;
+  opacity: .9;
+}
+
+/* ———————————————————————————————————————————
+   + Tabla de metas: más espacio para "Nombre" y menos para "Objetivo"
+   (col 1 = Nombre, col 4 = Objetivo)
+   ——————————————————————————————————————————— */
+.goals-table th:first-child,
+.goals-table td:first-child{
+  width: 65%;         /* más ancho para Nombre */
+}
+
+.goals-table th:nth-child(4),
+.goals-table td:nth-child(4){
+  width: 7%;         /* restamos a Objetivo */
+  min-width: 80px;   /* pero sin romper números/largo de texto */
+}

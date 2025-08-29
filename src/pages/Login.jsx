@@ -15,10 +15,9 @@ import Modal from '../components/Modal';
 import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
 
-// assets (según /src/assets/icons/)
-import googleLogo from '../assets/icons/google_logo.png';   // PNG
-import upmLogo from '../assets/icons/Logo_upm.png';
-import appLogo from '../assets/icons/logo.svg';
+// assets
+import googleLogo from '../assets/icons/google_logo.png';      // botón Google
+import libraryBG from '../assets/media/library_1536x1760.png'; // fondo mitad izquierda
 
 export default function Login() {
     const { login: loginWithGoogle } = useAuth();
@@ -102,83 +101,71 @@ export default function Login() {
         }
     };
 
-    // ── Estilos inline (no tocamos index.css) ────────────────────
+    // ── Estilos inline ───────────────────────────────────────────
     const S = {
         page: {
             minHeight: '100vh',
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: '40% 60%',
+            // Fondo que se verá en el hueco de las esquinas redondeadas del panel derecho:
+            background:
+                'linear-gradient(to bottom, #002c89 0%, #002c89 50%, #EAF7F1 50%, #EAF7F1 100%)',
         },
 
-        // IZQUIERDA
-        left: { position: 'relative', overflow: 'hidden' },
-
-        // Azul arriba (UPM) → difuminado → verde/blanco abajo
-        // Diagonal: esquina superior derecha → esquina inferior izquierda
+        // IZQUIERDA (sin bordes redondeados ahora)
+        left: {
+            position: 'relative',
+            overflow: 'hidden',
+        },
         leftBg: {
             position: 'absolute',
             inset: 0,
-            background:
-                'linear-gradient(to bottom left,' +
-                '#002c89 0%, #002c89 46%,' +                               // azul UPM en la parte ALTA
-                'rgba(0,44,137,0.90) 50%, rgba(234,247,241,0.90) 54%,' +   // banda de mezcla suave
-                '#EAF7F1 58%, #EAF7F1 100%)',                              // verde/blanco en la parte BAJA
+            backgroundImage: `url(${libraryBG})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
         },
         leftContent: {
             position: 'relative',
             zIndex: 1,
             height: '100%',
             display: 'grid',
-            gridTemplateRows: 'auto 1fr auto',
+            gridTemplateRows: '1.15fr auto 1.3fr', // texto centrado verticalmente (ligeramente abajo)
             alignItems: 'center',
             justifyItems: 'center',
-            padding: '36px 28px 128px',   // ↑ un poco más para subir el logo inferior
+            padding: '28px',
         },
-        upmLogo: {
-            width: '150px',
-            maxWidth: '90%',
-            height: 'auto',
-            objectFit: 'contain',
-            filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.18))',
-            justifySelf: 'center',
-        },
+        // Texto sin fondo
         midText: {
+            gridRow: 2,
             alignSelf: 'center',
             justifySelf: 'center',
             color: '#0b1f3a',
-            fontSize: '1rem',
-            lineHeight: 1.5,
-            background: 'rgba(255,255,255,.15)',
-            padding: '1rem 1.25rem',
-            borderRadius: 12,
-            boxShadow: '0 6px 18px rgba(0,0,0,.12)',
-        },
-        appLogo: {
-            width: '100px',
-            maxWidth: '80%',
-            height: 'auto',
-            objectFit: 'contain',
-            filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.18))',
-            justifySelf: 'center',
-            marginBottom: '6px',
+            fontSize: '.85rem',
+            lineHeight: 1.4,
+            background: 'transparent',
+            padding: 0,
+            textAlign: 'left',
         },
 
-        // DERECHA
+        // DERECHA (con borde redondeado solo a la izquierda)
         right: {
-            position: 'relative',         // para anclar el pie legal
+            position: 'relative',
             display: 'grid',
-            gridTemplateRows: 'auto 1fr', // título arriba, bloque de login centrado
+            gridTemplateRows: 'auto 1fr',
             alignItems: 'start',
             justifyItems: 'center',
             background: '#fff',
             paddingTop: '2.25rem',
+            borderTopLeftRadius: 12,
+            borderBottomLeftRadius: 12,
+            overflow: 'hidden', // por si hay sombras internas, que respeten el radio
         },
-        // Título: solo un poquito más abajo
         h1: {
             alignSelf: 'start',
             justifySelf: 'center',
             margin: 0,
-            marginTop: '2.8rem',           // ← bajamos un poquito el título
+            marginTop: '2.8rem',
             paddingTop: '.25rem',
             marginBottom: '1.2rem',
             fontSize: 'clamp(2.2rem, 3.2vw, 2.8rem)',
@@ -186,7 +173,6 @@ export default function Login() {
             color: '#111',
             textAlign: 'center',
         },
-        // Contenedor del bloque de logins (ya elevado)
         card: {
             alignSelf: 'center',
             justifySelf: 'center',
@@ -264,23 +250,23 @@ export default function Login() {
 
     return (
         <main className="login-page" style={S.page}>
-            {/* LADO IZQUIERDO: diagonal + contenido centrado */}
-            <section style={S.left} aria-label="Identidad visual UPM y GoLife">
+            {/* LADO IZQUIERDO */}
+            <section style={S.left} aria-label="Fondo biblioteca y créditos">
                 <div style={S.leftBg} />
                 <div style={S.leftContent}>
-                    <img src={upmLogo} alt="Universidad Politécnica de Madrid" style={S.upmLogo} />
                     <div style={S.midText}>
-                        <strong>Un trabajo hecho por:</strong>
-                        <ul style={{ margin: '.5rem 0 0 1rem' }}>
+                        <strong style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.25)' }}>
+                            Proyecto de Fin de Grado realizado por:
+                        </strong>
+                        <ul style={{ margin: '.4rem 0 0 1rem' }}>
                             <li>Xusheng Qiu Huang</li>
                             <li>Eduardo Segarra Ledesma</li>
                         </ul>
                     </div>
-                    <img src={appLogo} alt="GoLife" style={S.appLogo} />
                 </div>
             </section>
 
-            {/* LADO DERECHO: título arriba (un poco más abajo) y bloque de logins elevado */}
+            {/* LADO DERECHO */}
             <section style={S.right}>
                 <h1 style={S.h1}>Bienvenido a GoLife</h1>
 
@@ -365,7 +351,7 @@ export default function Login() {
                     </form>
                 </div>
 
-                {/* Pie legal a pie de pantalla (mitad derecha) */}
+                {/* Pie legal */}
                 <footer style={S.legalFooter}>
                     Al usar nuestros servicios aceptas nuestros{' '}
                     <button type="button" className="linklike" onClick={() => setOpenModal('terms')}>
@@ -378,7 +364,7 @@ export default function Login() {
                 </footer>
             </section>
 
-            {/* Modal informativo: Términos */}
+            {/* Modales */}
             <Modal
                 open={openModal === 'terms'}
                 title="Términos y condiciones"
@@ -389,7 +375,6 @@ export default function Login() {
                 <TermsContent />
             </Modal>
 
-            {/* Modal informativo: Datos */}
             <Modal
                 open={openModal === 'data'}
                 title="Tratamiento de datos"
@@ -400,7 +385,6 @@ export default function Login() {
                 <DataPolicyContent />
             </Modal>
 
-            {/* Modal: Restablecer contraseña */}
             <Modal
                 open={openModal === 'reset'}
                 title="Restablecer contraseña"
