@@ -465,6 +465,68 @@ export default function Dashboard() {
         }
     };
 
+    /* -------------------- EDITAR META -------------------- */
+    const handleSaveEdit = async (form) => {
+        if (!editGoal) return;
+
+        const body = {};
+        if (form.nombre?.trim() && form.nombre !== editGoal.nombre)
+            body.nombre = form.nombre.trim();
+        if ((form.descripcion ?? "").trim() !== (editGoal.descripcion ?? ""))
+            body.descripcion = (form.descripcion ?? "").trim();
+
+        const newIndef = form.periodoIndef;
+        const newVal = newIndef ? 1 : Number(form.periodoNum);
+        const newUnit = newIndef ? "Indefinido" : cap(form.periodoUnit);
+        if (newUnit !== editGoal.duracionUnidad || newVal !== editGoal.duracionValor) {
+            body.duracionValor = newVal;
+            body.duracionUnidad = newUnit;
+        }
+
+        if (editGoal.tipo === "Num") {
+            const valObj = Number(form.objetivoNum);
+            if (!Number.isNaN(valObj) && valObj !== editGoal.valorObjetivo)
+                body.valorObjetivo = valObj;
+            if ((form.objetivoUnidad ?? "").trim() && form.objetivoUnidad !== editGoal.unidad)
+                body.unidad = form.objetivoUnidad.trim();
+        }
+
+        if (Object.keys(body).length === 0) return setEditGoal(null);
+
+        try {
+            const res =
+                editGoal.tipo === "Bool"
+                    ? await updateGoalBool(editGoal._id, body)
+                    : await updateGoalNum(editGoal._id, body);
+
+            // actualiza localmente con lo que pediste
+            const locallyUpdated = { ...editGoal, ...body };
+            setGoals((curr) =>
+                curr.map((g) => (g._id === editGoal._id ? { ...g, ...locallyUpdated } : g))
+            );
+            syncSelected(locallyUpdated);
+            setEditGoal(null);
+
+            const payload = res?.data ?? {};
+            if (payload.estadisticas || payload.estadisticasUsuario) {
+                setStats(payload.estadisticas ?? payload.estadisticasUsuario);
+            }
+            if (payload.meta) {
+                upsertGoal(payload.meta);
+                syncSelected(payload.meta);
+            } else if (Array.isArray(payload.metas)) {
+                const fromServer = payload.metas.find((m) => m._id === locallyUpdated._id);
+                if (fromServer) {
+                    upsertGoal(fromServer);
+                    syncSelected(fromServer);
+                }
+            }
+        } catch (e) {
+            setError(apiError(e, "No se pudo actualizar la meta."));
+        }
+    };
+
+
     // ── Comparadores para ordenación ─────────────────────────────
     const startMillis = (g) => {
         const d = Array.isArray(g.fecha) ? g.fecha[0] : g.fecha;
