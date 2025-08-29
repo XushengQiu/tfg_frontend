@@ -7,44 +7,35 @@ import { createUser } from '../services/api';
 import Modal from '../components/Modal';
 import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
+import appLogo from '../assets/icons/logo.svg';
 
 /* Helper para mostrar "Error <status>: <mensaje>" desde el backend */
 const apiError = (err, fallback) => {
     const res = err?.response;
     const status = res?.status;
     const data = res?.data;
-
     let msg =
-        (typeof data === "string" && data) ||
-        data?.message ||
-        data?.error ||
-        (Array.isArray(data?.errors) &&
-            (typeof data.errors[0] === "string"
-                ? data.errors[0]
-                : data.errors[0]?.msg || data.errors[0]?.message)) ||
-        res?.statusText ||
-        err?.message ||
-        fallback;
-
-    return status
-        ? `Error ${status}: ${msg || fallback || "Solicitud fallida"}`
-        : msg || fallback || "Se produjo un error.";
+        (typeof data === 'string' && data) ||
+        (data?.message || data?.error) ||
+        fallback ||
+        'Error inesperado';
+    if (status) msg = `Error ${status}: ${msg}`;
+    return msg;
 };
 
 export default function Onboarding() {
+    const navigate = useNavigate();
+
     const [name, setName] = useState('');
-    const [surname, setSurname] = useState(''); // opcional
+    const [surname, setSurname] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // cadena de modales
     const [showTerms, setShowTerms] = useState(false);
     const [showData, setShowData] = useState(false);
 
-    const navigate = useNavigate();
-
     const handleSubmit = (e) => {
         e.preventDefault();
-        setShowTerms(true);
+        setShowTerms(true); // primero términos
     };
 
     // --- Términos ---
@@ -61,13 +52,12 @@ export default function Onboarding() {
         try {
             const payload = {
                 nombre: name.trim(),
-                apellidos: (surname || '').trim(),
+                apellidos: surname.trim() || null,
             };
             await createUser(payload);
             navigate('/dashboard', { replace: true });
         } catch (err) {
-            alert(apiError(err, "No se pudo crear el usuario."));
-            navigate('/login', { replace: true });
+            alert(apiError(err, 'No se pudo crear el usuario'));
         } finally {
             setLoading(false);
         }
@@ -76,39 +66,60 @@ export default function Onboarding() {
 
     return (
         <>
-            <form onSubmit={handleSubmit} style={{ margin: '2rem' }}>
-                <h2>Datos del usuario</h2>
+            <main className="onboarding-page">
+                <form className="onboarding-card" onSubmit={handleSubmit}>
+                    <h1 className="onboarding-title">Datos del usuario</h1>
 
-                <label>
-                    Nombre:&nbsp;
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                        minLength={2}
-                        maxLength={50}
-                    />
-                </label>
+                    <div className="onboarding-fields">
+                        <label className="onboarding-field">
+                            <span>Nombre</span>
+                            <input
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                                minLength={2}
+                                maxLength={50}
+                            />
+                        </label>
 
-                &nbsp;&nbsp;
+                        <label className="onboarding-field">
+                            <span>Apellidos (opcional)</span>
+                            <input
+                                value={surname}
+                                onChange={(e) => setSurname(e.target.value)}
+                                placeholder="(opcional)"
+                                maxLength={50}
+                            />
+                        </label>
+                    </div>
 
-                <label>
-                    Apellidos (opcional):&nbsp;
-                    <input
-                        value={surname}
-                        onChange={(e) => setSurname(e.target.value)}
-                        placeholder="(opcional)"
-                        maxLength={50}
-                    />
-                </label>
+                    <button type="submit" className="onboarding-submit" disabled={loading}>
+                        {loading ? 'Creando…' : 'Crear'}
+                    </button>
+                </form>
+            </main>
 
-                &nbsp;&nbsp;
+            <img src={appLogo} alt="GoLife logo" className="corner-logo" />
 
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Creando…' : 'Crear'}
+            <div className="legal-fabs" aria-label="Accesos legales">
+                <button
+                    type="button"
+                    className="legal-fab"
+                    onClick={() => setShowTerms(true)}
+                >
+                    Términos y condiciones
                 </button>
-            </form>
 
+                <button
+                    type="button"
+                    className="legal-fab"
+                    onClick={() => setShowData(true)}
+                >
+                    Tratamiento de datos
+                </button>
+            </div>
+
+            {/* Modal 1: Términos */}
             <Modal
                 open={showTerms}
                 title="Términos y condiciones"
@@ -122,6 +133,7 @@ export default function Onboarding() {
                 <TermsContent />
             </Modal>
 
+            {/* Modal 2: Tratamiento de datos */}
             <Modal
                 open={showData}
                 title="Tratamiento de datos"

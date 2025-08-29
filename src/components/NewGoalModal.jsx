@@ -1,5 +1,6 @@
 // src/components/NewGoalModal.jsx
 import React, { useEffect, useState, useMemo } from "react";
+import "../index.css";
 
 const todayISO = () => {
     const d = new Date();
@@ -15,6 +16,15 @@ const isDecimal2In = (s, a, b) => {
     const n = Number(txt);
     return !Number.isNaN(n) && n >= a && n <= b;
 };
+
+// Helper para oscurecer un color hexadecimal (JS puro)
+const darken = (hex, f = 0.18) => {
+    const n = hex.replace("#", "");
+    const to = (i) =>
+        Math.max(0, Math.min(255, Math.floor(parseInt(n.slice(i, i + 2), 16) * (1 - f))));
+    return `rgb(${to(0)}, ${to(2)}, ${to(4)})`;
+};
+
 
 export default function NewGoalModal({ open, onClose, onCreate }) {
     const [nombre, setNombre] = useState("");
@@ -48,17 +58,24 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
         const descrOk = (descripcion || "").trim().length <= 300;
         const periodoOk =
             periodoIndef ||
-            (String(periodoNum).trim() !== "" &&
-                isIntIn(Number(periodoNum), 1, 10000));
-        const objetivoOk =
-            isBool || isDecimal2In(objetivoNum, 0.01, 9999999999999.99);
+            (String(periodoNum).trim() !== "" && isIntIn(Number(periodoNum), 1, 10000));
+        const objetivoOk = isBool || isDecimal2In(objetivoNum, 0.01, 9999999999999.99);
         const unidadOk =
             isBool ||
             (objetivoUnidad.trim().length >= 1 && objetivoUnidad.trim().length <= 20);
         return nameOk && descrOk && periodoOk && objetivoOk && unidadOk && !!fechaInicio;
-    }, [nombre, descripcion, periodoIndef, periodoNum, isBool, objetivoNum, objetivoUnidad, fechaInicio]);
+    }, [
+        nombre,
+        descripcion,
+        periodoIndef,
+        periodoNum,
+        isBool,
+        objetivoNum,
+        objetivoUnidad,
+        fechaInicio,
+    ]);
 
-    const handleSubmit = (e) => {
+    const submit = (e) => {
         e.preventDefault();
         if (!canSubmit) return;
 
@@ -77,47 +94,74 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
 
     if (!open) return null;
 
+    /* Estilo compacto “como antes” */
+    const INPUT = {
+        borderRadius: 6,
+        border: "1px solid #E0E0E0",
+        padding: "8px 10px",
+        outline: "none",
+    };
+    const ROW = {
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        gap: ".6rem",
+        alignItems: "center",
+    };
+    const INLINE = { display: "flex", gap: ".5rem", alignItems: "center" };
+
+    const GREEN = "#7FE08A";
+    const RED = "#E74C3C";
+
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <button className="modal-close" aria-label="Cerrar" onClick={onClose}>×</button>
+            <div
+                className="modal"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    width: "min(620px, 92vw)",          // ← más estrecho
+                    maxWidth: 620,
+                    padding: "18px 20px 14px",
+                    borderRadius: 14,
+                }}
+            >
+                <h3 style={{ textAlign: "center", marginTop: 0, marginBottom: "10px" }}>
+                    Nueva meta
+                </h3>
 
-                <h2 style={{ textAlign: "center", marginTop: 0 }}>Nueva meta</h2>
-
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={submit} style={{ display: "grid", gap: ".6rem" }}>
                     {/* Nombre */}
-                    <label>
-                        Nombre*:
+                    <label style={ROW}>
+                        <span>Nombre*:</span>
                         <input
-                            type="text"
+                            style={INPUT}
                             value={nombre}
                             onChange={(e) => setNombre(e.target.value)}
-                            required
                             minLength={1}
                             maxLength={50}
+                            required
                         />
                     </label>
 
-                    {/* Periodo */}
-                    <label>
-                        Periodo*:
-                        <div className={`field-group ${periodoIndef ? "group-disabled" : ""}`}>
+                    {/* Periodo en UNA línea */}
+                    <label style={ROW}>
+                        <span>Periodo*:</span>
+                        <div style={{ ...INLINE, opacity: periodoIndef ? 0.55 : 1 }}>
                             <input
-                                className="short"
                                 type="number"
+                                style={{ ...INPUT, width: 110 }}
+                                disabled={periodoIndef}
+                                required={!periodoIndef}
+                                value={periodoNum}
+                                onChange={(e) => setPeriodoNum(e.target.value)}
                                 min="1"
                                 max="10000"
                                 step="1"
-                                value={periodoNum}
-                                onChange={(e) => setPeriodoNum(e.target.value)}
-                                disabled={periodoIndef}
-                                required={!periodoIndef}
                             />
                             <select
-                                className="medium"
+                                style={{ ...INPUT }}
+                                disabled={periodoIndef}
                                 value={periodoUnit}
                                 onChange={(e) => setPeriodoUnit(e.target.value)}
-                                disabled={periodoIndef}
                             >
                                 <option value="dias">Días</option>
                                 <option value="semanas">Semanas</option>
@@ -125,7 +169,9 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                 <option value="años">Años</option>
                             </select>
 
-                            <label className="inline-check">
+                            <label
+                                style={{ display: "flex", gap: ".35rem", alignItems: "center", marginLeft: ".25rem" }}
+                            >
                                 <input
                                     type="checkbox"
                                     checked={periodoIndef}
@@ -136,32 +182,32 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                         </div>
                     </label>
 
-                    {/* Objetivo */}
-                    <label>
-                        Objetivo*:
-                        <div className={`field-group ${isBool ? "group-disabled" : ""}`}>
+                    {/* Objetivo en UNA línea */}
+                    <label style={ROW}>
+                        <span>Objetivo*:</span>
+                        <div style={{ ...INLINE, opacity: isBool ? 0.55 : 1 }}>
                             <input
                                 type="number"
-                                inputMode="decimal"
                                 step="0.01"
-                                min="0.01"
-                                max="9999999999999.99"
+                                min="0"
+                                disabled={isBool}
+                                required={!isBool}
                                 value={objetivoNum}
                                 onChange={(e) => setObjetivoNum(e.target.value)}
-                                disabled={isBool}
-                                required={!isBool}
+                                style={{ ...INPUT, width: 140 }}
                             />
                             <input
-                                type="text"
                                 placeholder="unidad"
+                                disabled={isBool}
+                                required={!isBool}
                                 value={objetivoUnidad}
                                 onChange={(e) => setObjetivoUnidad(e.target.value)}
-                                disabled={isBool}
-                                minLength={1}
-                                maxLength={20}
-                                required={!isBool}
+                                style={{ ...INPUT, width: 140 }}
                             />
-                            <label className="inline-check">
+
+                            <label
+                                style={{ display: "flex", gap: ".35rem", alignItems: "center", marginLeft: ".25rem" }}
+                            >
                                 <input
                                     type="checkbox"
                                     checked={isBool}
@@ -172,31 +218,65 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                         </div>
                     </label>
 
-                    {/* Fecha de inicio */}
-                    <label>
-                        Fecha inicio:
+                    {/* Fecha */}
+                    <label style={ROW}>
+                        <span>Fecha inicio:</span>
                         <input
                             type="date"
                             value={fechaInicio}
                             onChange={(e) => setFechaInicio(e.target.value)}
-                            required
+                            style={{ ...INPUT, width: "100%" }}
                         />
                     </label>
 
                     {/* Descripción */}
-                    <label>
-                        Descripción:
+                    <label style={ROW}>
+                        <span>Descripción:</span>
                         <textarea
-                            rows="4"
+                            rows={4}
                             value={descripcion}
                             onChange={(e) => setDescripcion(e.target.value)}
                             maxLength={300}
+                            style={{ ...INPUT, resize: "vertical" }}
                         />
                     </label>
 
-                    <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" onClick={onClose}>Cancelar</button>
-                        <button type="submit" disabled={!canSubmit}>Crear</button>
+                    {/* Acciones: un botón en cada extremo */}
+                    <div
+                        className="modal-actions"
+                        style={{ justifyContent: "space-between", marginTop: ".4rem" }}
+                    >
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            style={{
+                                background: RED,
+                                border: `1px solid ${darken(RED)}`,
+                                color: "#fff",
+                                borderRadius: 999,
+                                padding: "8px 14px",
+                                boxShadow: "0 2px 6px rgba(0,0,0,.08)",
+                            }}
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="submit"
+                            disabled={!canSubmit}
+                            style={{
+                                background: GREEN,
+                                border: `1px solid ${darken(GREEN)}`,
+                                color: "#fff",
+                                borderRadius: 999,
+                                padding: "8px 14px",
+                                boxShadow: "0 2px 6px rgba(0,0,0,.08)",
+                                opacity: canSubmit ? 1 : 0.65,
+                            }}
+                            title={!canSubmit ? "Rellena los campos obligatorios" : "Crear meta"}
+                        >
+                            Crear
+                        </button>
                     </div>
                 </form>
             </div>

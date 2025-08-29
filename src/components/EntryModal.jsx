@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import "../index.css";
 
-// helpers estables
+// helpers
 const getTodayISO = () => new Date().toISOString().substring(0, 10);
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 
-// obtiene la fecha de creación de la meta como YYYY-MM-DD (soporta string o array)
+// fecha creación de la meta como YYYY-MM-DD (soporta string o array)
 const getGoalCreationISO = (goal) => {
     const raw = Array.isArray(goal?.fecha) ? goal.fecha[0] : goal?.fecha;
     return raw ? String(raw).slice(0, 10) : null;
@@ -18,18 +18,16 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
         valorNum: "",
     });
 
-    // cuando se abre, inicializa la fecha como max(hoy, fechaCreaciónMeta)
+    // al abrir: fecha = max(hoy, fechaCreaciónMeta)
     useEffect(() => {
         if (open && goal) {
             const min = getGoalCreationISO(goal) || getTodayISO();
             const today = getTodayISO();
             const start = today >= min ? today : min;
-            setData({ fecha: start, valorBool: null, valorNum: "" });
+            setData((d) => ({ ...d, fecha: start }));
         }
-        if (!open) {
-            setData({ fecha: getTodayISO(), valorBool: null, valorNum: "" });
-        }
-    }, [open, goal]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, goal?._id]);
 
     if (!open || !goal) return null;
 
@@ -42,8 +40,9 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div className="modal entry-modal" onClick={(e) => e.stopPropagation()}>
+                {/* Cabecera con más espacio bajo el título */}
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".9rem" }}>
                     <h2 style={{ margin: 0 }}>{goal.nombre}</h2>
                     <span style={{ fontWeight: 600 }}>
             {goal.duracionUnidad === "Indefinido"
@@ -61,7 +60,7 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                 <form onSubmit={submit}>
                     {goal.tipo === "Bool" ? (
                         <label style={{ display: "block", marginBottom: "1rem" }}>
-                            ¿Has completado tú objetivo?
+                            ¿Has completado tu objetivo?
                             <div style={{ display: "flex", gap: "1rem", marginTop: ".4rem" }}>
                                 <label>
                                     <input
@@ -112,9 +111,14 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
                         />
                     </label>
 
-                    <div style={{ display: "flex", gap: "1rem" }}>
-                        <button type="button" onClick={onClose}>Cancelar</button>
-                        <button type="submit">Guardar</button>
+                    {/* Botones en los extremos, con colores suaves */}
+                    <div className="modal-actions" style={{ justifyContent: "space-between" }}>
+                        <button type="button" className="btn-soft-danger" onClick={onClose}>
+                            Cancelar
+                        </button>
+                        <button type="submit" className="btn-soft-success">
+                            Guardar
+                        </button>
                     </div>
                 </form>
             </div>
