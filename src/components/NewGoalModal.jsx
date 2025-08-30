@@ -213,7 +213,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                     checked={isBool}
                                     onChange={(e) => setIsBool(e.target.checked)}
                                 />
-                                Boolean
+                                Check
                             </label>
                         </div>
                     </label>

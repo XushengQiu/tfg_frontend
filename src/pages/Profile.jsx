@@ -270,10 +270,10 @@ export default function Profile() {
             {confirm && (
                 <div className="modal-overlay">
                     <div className="modal">
-                        <p>
+                        <p className="confirm-text">
                             ¿Estás seguro de querer <strong>ELIMINAR</strong> esta cuenta?
                             <br />
-                            Esta acción es irreversible.
+                            Esta acción es irreversible y se borrará todos sus datos.
                         </p>
                         <div className="modal-actions">
                             <button className="delete-btn" disabled={timer > 0} onClick={handleDelete}>
@@ -289,12 +289,12 @@ export default function Profile() {
 
             {/* Legales (usa tu <Modal/> existente) */}
             {legalOpen === "terms" && (
-                <Modal onClose={() => setLegalOpen(null)} title="Términos y condiciones">
+                <Modal open onClose={() => setLegalOpen(null)} title="Términos y condiciones">
                     <TermsContent />
                 </Modal>
             )}
             {legalOpen === "data" && (
-                <Modal onClose={() => setLegalOpen(null)} title="Tratamiento de datos">
+                <Modal open onClose={() => setLegalOpen(null)} title="Tratamiento de datos">
                     <DataPolicyContent />
                 </Modal>
             )}

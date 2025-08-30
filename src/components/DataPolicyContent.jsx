@@ -43,7 +43,7 @@ export default function DataPolicyContent() {
             <p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad. También a retirar el consentimiento cuando aplique y a reclamar ante la AEPD. Para ejercerlos, escribe a <em>golifepfg@gmail.com</em> o usa los mecanismos dentro de la app (Perfil).</p>
 
             <h3>8. Seguridad</h3>
-            <p>Aplicamos medidas técnicas y organizativas razonables para proteger la confidencialidad, integridad y disponibilidad de tus datos. Aun así, ningún sistema es 100% seguro.</p>
+            <p>Aplicamos medidas técnicas y organizativas razonables para proteger la confidencialidad, integridad y disponibilidad de tus datos. GoLife aplicará las medidas necesarias, tecnicas y requeridas por  ley para asegurar la confidencialidad, integradad y disponibilidad de tus datos. Sin embargo, GoLife no se hace responsable de cualquier filtración que se de por causas de un uso ilegítimo o indebido por parte del usuario.</p>
 
             <h3>9. Cookies y analítica</h3>
             <p>Usamos cookies/tecnologías similares <strong>estrictamente necesarias</strong> para que la app funcione y, en su caso, analítica agregada para mejorar el servicio. Puedes gestionar cookies no esenciales desde los ajustes de tu navegador.</p>

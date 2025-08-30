@@ -30,24 +30,30 @@ export default function Onboarding() {
     const [surname, setSurname] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const [showTerms, setShowTerms] = useState(false);
-    const [showData, setShowData] = useState(false);
+    // Botones flotantes: SOLO informativos
+    const [showTermsInfo, setShowTermsInfo] = useState(false);
+    const [showDataInfo, setShowDataInfo] = useState(false);
+
+    // Flujo de creación: obligatorio aceptar con scroll
+    const [showTermsFlow, setShowTermsFlow] = useState(false);
+    const [showDataFlow, setShowDataFlow] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setShowTerms(true); // primero términos
+        // Al crear: lanzar FLUJO obligatorio empezando por Términos
+        setShowTermsFlow(true);
     };
 
-    // --- Términos ---
-    const acceptTerms = () => {
-        setShowTerms(false);
-        setShowData(true);
+    // --- Flujo obligatorio: Términos ---
+    const acceptTermsFlow = () => {
+        setShowTermsFlow(false);
+        setShowDataFlow(true);
     };
-    const denyTerms = () => setShowTerms(false);
+    const denyTermsFlow = () => setShowTermsFlow(false);
 
-    // --- Tratamiento de datos ---
-    const acceptData = async () => {
-        setShowData(false);
+    // --- Flujo obligatorio: Tratamiento de datos ---
+    const acceptDataFlow = async () => {
+        setShowDataFlow(false);
         setLoading(true);
         try {
             const payload = {
@@ -55,14 +61,14 @@ export default function Onboarding() {
                 apellidos: surname.trim() || null,
             };
             await createUser(payload);
-            navigate('/dashboard', { replace: true });
+            navigate('/dashboard', { replace: true, state: { firstVisit: true } });
         } catch (err) {
             alert(apiError(err, 'No se pudo crear el usuario'));
         } finally {
             setLoading(false);
         }
     };
-    const denyData = () => setShowData(false);
+    const denyDataFlow = () => setShowDataFlow(false);
 
     return (
         <>
@@ -101,11 +107,12 @@ export default function Onboarding() {
 
             <img src={appLogo} alt="GoLife logo" className="corner-logo" />
 
+            {/* Botones flotantes: solo informativos */}
             <div className="legal-fabs" aria-label="Accesos legales">
                 <button
                     type="button"
                     className="legal-fab"
-                    onClick={() => setShowTerms(true)}
+                    onClick={() => setShowTermsInfo(true)}
                 >
                     Términos y condiciones
                 </button>
@@ -113,18 +120,36 @@ export default function Onboarding() {
                 <button
                     type="button"
                     className="legal-fab"
-                    onClick={() => setShowData(true)}
+                    onClick={() => setShowDataInfo(true)}
                 >
                     Tratamiento de datos
                 </button>
             </div>
 
-            {/* Modal 1: Términos */}
+            {/* -------- Modales informativos (sin aceptar/denegar) -------- */}
             <Modal
-                open={showTerms}
+                open={showTermsInfo}
                 title="Términos y condiciones"
-                onClose={denyTerms}
-                onAccept={acceptTerms}
+                onClose={() => setShowTermsInfo(false)}
+            >
+                <TermsContent />
+            </Modal>
+
+            <Modal
+                open={showDataInfo}
+                title="Tratamiento de datos"
+                onClose={() => setShowDataInfo(false)}
+            >
+                <DataPolicyContent />
+            </Modal>
+
+            {/* -------- Flujo OBLIGATORIO al crear cuenta -------- */}
+            {/* 1) Términos */}
+            <Modal
+                open={showTermsFlow}
+                title="Términos y condiciones"
+                onClose={denyTermsFlow}
+                onAccept={acceptTermsFlow}
                 acceptText="Aceptar"
                 denyText="Denegar"
                 requireScroll
@@ -133,12 +158,12 @@ export default function Onboarding() {
                 <TermsContent />
             </Modal>
 
-            {/* Modal 2: Tratamiento de datos */}
+            {/* 2) Tratamiento de datos */}
             <Modal
-                open={showData}
+                open={showDataFlow}
                 title="Tratamiento de datos"
-                onClose={denyData}
-                onAccept={acceptData}
+                onClose={denyDataFlow}
+                onAccept={acceptDataFlow}
                 acceptText="Aceptar"
                 denyText="Denegar"
                 requireScroll

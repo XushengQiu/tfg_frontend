@@ -1,7 +1,7 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Login.jsx
 // ───────────────────────────────────────────────────────────────
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     getAuth,
     signInWithEmailAndPassword,
@@ -16,8 +16,24 @@ import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
 
 // assets
-import googleLogo from '../assets/icons/google_logo.png';      // botón Google
-import libraryBG from '../assets/media/library_1536x1760.png'; // fondo mitad izquierda
+import googleLogo from '../assets/icons/google_logo.png';
+import libraryBG from '../assets/media/library_1536x1760.png';
+
+// Iconos inline (sin dependencias)
+const EyeOpenIcon = (props) => (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+);
+
+const EyeOffIcon = (props) => (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.29 20.29 0 0 1 5.06-5.94"></path>
+        <path d="M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a20.87 20.87 0 0 1-3.2 4.2"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>
+);
 
 export default function Login() {
     const { login: loginWithGoogle } = useAuth();
@@ -30,10 +46,21 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [busy, setBusy] = useState(false);
 
+    // mostrar/ocultar contraseña
+    const [showPwd, setShowPwd] = useState(false);
+
     // reset password
     const [resetEmail, setResetEmail] = useState('');
     const [resetBusy, setResetBusy] = useState(false);
     const [resetSent, setResetSent] = useState(false);
+
+    // toast de error de login
+    const [loginToast, setLoginToast] = useState(null);
+    useEffect(() => {
+        if (!loginToast) return;
+        const id = setTimeout(() => setLoginToast(null), 5000);
+        return () => clearTimeout(id);
+    }, [loginToast]);
 
     // ── Login con email ──────────────────────────────────────────
     const doEmailLogin = async (e) => {
@@ -44,7 +71,17 @@ export default function Login() {
             await signInWithEmailAndPassword(getAuth(), email.trim(), password);
             navigate('/dashboard', { replace: true });
         } catch (err) {
-            alert(err?.message || 'No se pudo iniciar sesión.');
+            const code = err?.code || '';
+            if (
+                code === 'auth/user-not-found' ||
+                code === 'auth/wrong-password' ||
+                code === 'auth/invalid-credential' ||
+                code === 'auth/invalid-email'
+            ) {
+                setLoginToast('Las credenciales no son correctas.');
+            } else {
+                setLoginToast(err?.message || 'No se pudo iniciar sesión.');
+            }
         } finally {
             setBusy(false);
         }
@@ -101,150 +138,80 @@ export default function Login() {
         }
     };
 
-    // ── Estilos inline ───────────────────────────────────────────
+    // ── Estilos inline (solo lo necesario para estos cambios) ────
     const S = {
         page: {
             minHeight: '100vh',
             display: 'grid',
             gridTemplateColumns: '40% 60%',
-            // Fondo que se verá en el hueco de las esquinas redondeadas del panel derecho:
             background:
                 'linear-gradient(to bottom, #002c89 0%, #002c89 50%, #EAF7F1 50%, #EAF7F1 100%)',
         },
-
-        // IZQUIERDA (sin bordes redondeados ahora)
-        left: {
-            position: 'relative',
-            overflow: 'hidden',
-        },
+        left: { position: 'relative', overflow: 'hidden' },
         leftBg: {
-            position: 'absolute',
-            inset: 0,
+            position: 'absolute', inset: 0,
             backgroundImage: `url(${libraryBG})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
         },
         leftContent: {
-            position: 'relative',
-            zIndex: 1,
-            height: '100%',
-            display: 'grid',
-            gridTemplateRows: '1.15fr auto 1.3fr', // texto centrado verticalmente (ligeramente abajo)
-            alignItems: 'center',
-            justifyItems: 'center',
-            padding: '28px',
+            position: 'relative', zIndex: 1, height: '100%',
+            display: 'grid', gridTemplateRows: '1.15fr auto 1.3fr',
+            alignItems: 'center', justifyItems: 'center', padding: '28px',
         },
-        // Texto sin fondo
         midText: {
-            gridRow: 2,
-            alignSelf: 'center',
-            justifySelf: 'center',
-            color: '#0b1f3a',
-            fontSize: '.85rem',
-            lineHeight: 1.4,
-            background: 'transparent',
-            padding: 0,
-            textAlign: 'left',
+            gridRow: 2, color: '#0b1f3a', fontSize: '.85rem', lineHeight: 1.4,
+            background: 'transparent', padding: 0, textAlign: 'left',
         },
 
-        // DERECHA (con borde redondeado solo a la izquierda)
         right: {
-            position: 'relative',
-            display: 'grid',
-            gridTemplateRows: 'auto 1fr',
-            alignItems: 'start',
-            justifyItems: 'center',
-            background: '#fff',
-            paddingTop: '2.25rem',
-            borderTopLeftRadius: 12,
-            borderBottomLeftRadius: 12,
-            overflow: 'hidden', // por si hay sombras internas, que respeten el radio
+            position: 'relative', display: 'grid', gridTemplateRows: 'auto 1fr',
+            alignItems: 'start', justifyItems: 'center', background: '#fff',
+            paddingTop: '2.25rem', borderTopLeftRadius: 12, borderBottomLeftRadius: 12, overflow: 'hidden',
         },
         h1: {
-            alignSelf: 'start',
-            justifySelf: 'center',
-            margin: 0,
-            marginTop: '2.8rem',
-            paddingTop: '.25rem',
-            marginBottom: '1.2rem',
-            fontSize: 'clamp(2.2rem, 3.2vw, 2.8rem)',
-            lineHeight: 1.12,
-            color: '#111',
-            textAlign: 'center',
+            alignSelf: 'start', justifySelf: 'center', margin: 0, marginTop: '2.8rem',
+            paddingTop: '.25rem', marginBottom: '1.2rem',
+            fontSize: 'clamp(2.2rem, 3.2vw, 2.8rem)', lineHeight: 1.12, color: '#111', textAlign: 'center',
         },
-        card: {
-            alignSelf: 'center',
-            justifySelf: 'center',
-            width: 'min(86%, 440px)',
-            margin: 0,
-            transform: 'translateY(-7vh)',
-        },
+        card: { alignSelf: 'center', justifySelf: 'center', width: 'min(86%, 440px)', transform: 'translateY(-7vh)' },
 
-        // Botón Google
         gBtn: {
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '.55rem',
-            padding: '.6rem 1rem',
-            background: '#fff',
-            border: '1px solid #d9dfe5',
-            borderRadius: 12,
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,.10)',
+            display: 'inline-flex', alignItems: 'center', gap: '.55rem',
+            padding: '.6rem 1rem', background: '#fff', border: '1px solid #d9dfe5',
+            borderRadius: 12, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,.10)',
         },
         gIcon: { width: 18, height: 18, display: 'block' },
-
         divider: { textAlign: 'center', margin: '1rem 0', color: '#777' },
 
         form: { display: 'grid', gap: '.6rem' },
-        label: { display: 'block' },
+        label: { display: 'block', width: '100%' },
+        inputWrap: { position: 'relative', width: '100%' }, // ← mismos wrappers para ambos campos
         input: {
-            width: '100%',
-            padding: '.55rem .75rem',
-            marginTop: '.25rem',
-            borderRadius: 10,
-            border: '1px solid #D7DEE3',
-            outline: 'none',
+            width: '100%', padding: '.55rem .75rem', marginTop: '.25rem',
+            borderRadius: 10, border: '1px solid #D7DEE3', outline: 'none', boxSizing: 'border-box',
         },
-        inputFocus: {
-            boxShadow: '0 0 0 3px rgba(79,190,152,.18)',
-            borderColor: 'var(--brand)',
+        inputFocus: { boxShadow: '0 0 0 3px rgba(79,190,152,.18)', borderColor: 'var(--brand)' },
+        eyeBtn: {
+            position: 'absolute', top: '60%', right: 8, transform: 'translateY(-50%)',
+            background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, lineHeight: 1,
         },
 
         rowBtns: { display: 'flex', gap: '.6rem', justifyContent: 'space-between', marginTop: '.3rem' },
         btn: {
-            flex: 1,
-            padding: '.6rem 1rem',
-            borderRadius: 12,
-            cursor: 'pointer',
-            border: '1px solid #cfd8dc',
-            background: '#eef1f3',
-            color: '#111',
+            flex: 1, padding: '.6rem 1rem', borderRadius: 12, cursor: 'pointer',
+            border: '1px solid #cfd8dc', background: '#eef1f3', color: '#111',
             boxShadow: '0 2px 6px rgba(0,0,0,.10)',
         },
         btnPrimary: {
-            flex: 1,
-            padding: '.6rem 1rem',
-            borderRadius: 12,
-            cursor: 'pointer',
-            border: '1px solid var(--brand-600)',
-            background: 'var(--brand)',
-            color: '#fff',
+            flex: 1, padding: '.6rem 1rem', borderRadius: 12, cursor: 'pointer',
+            border: '1px solid var(--brand-600)', background: 'var(--brand)', color: '#fff',
             boxShadow: '0 2px 6px rgba(0,0,0,.15)',
         },
         reset: { textAlign: 'right', marginTop: '-.25rem' },
 
-        // Pie legal fijo en la mitad derecha
         legalFooter: {
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            bottom: 18,
-            width: 'min(88%, 620px)',
-            color: '#666',
-            fontSize: '.9rem',
-            textAlign: 'center',
+            position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+            bottom: 18, width: 'min(88%, 620px)', color: '#666', fontSize: '.9rem', textAlign: 'center',
         },
     };
 
@@ -286,35 +253,48 @@ export default function Login() {
                     <form onSubmit={doEmailLogin} style={S.form}>
                         <label style={S.label}>
                             Correo electrónico
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                style={S.input}
-                                onFocus={(e) => Object.assign(e.target.style, S.inputFocus)}
-                                onBlur={(e) => {
-                                    e.target.style.boxShadow = '';
-                                    e.target.style.borderColor = '#D7DEE3';
-                                }}
-                            />
+                            <div style={S.inputWrap}>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    style={S.input}
+                                    onFocus={(e) => Object.assign(e.target.style, S.inputFocus)}
+                                    onBlur={(e) => {
+                                        e.target.style.boxShadow = '';
+                                        e.target.style.borderColor = '#D7DEE3';
+                                    }}
+                                />
+                            </div>
                         </label>
 
                         <label style={S.label}>
                             Contraseña
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                style={S.input}
-                                onFocus={(e) => Object.assign(e.target.style, S.inputFocus)}
-                                onBlur={(e) => {
-                                    e.target.style.boxShadow = '';
-                                    e.target.style.borderColor = '#D7DEE3';
-                                }}
-                            />
+                            <div style={S.inputWrap}>
+                                <input
+                                    type={showPwd ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    minLength={6}
+                                    style={{ ...S.input, paddingRight: '2.2rem' }} // deja espacio al icono
+                                    onFocus={(e) => Object.assign(e.target.style, S.inputFocus)}
+                                    onBlur={(e) => {
+                                        e.target.style.boxShadow = '';
+                                        e.target.style.borderColor = '#D7DEE3';
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPwd((v) => !v)}
+                                    style={S.eyeBtn}
+                                    aria-label={showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                    title={showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                >
+                                    {showPwd ? <EyeOpenIcon /> : <EyeOffIcon />}
+                                </button>
+                            </div>
                         </label>
 
                         {/* Olvidé mi contraseña */}
@@ -364,7 +344,7 @@ export default function Login() {
                 </footer>
             </section>
 
-            {/* Modales */}
+            {/* Modales legales informativos */}
             <Modal
                 open={openModal === 'terms'}
                 title="Términos y condiciones"
@@ -385,6 +365,7 @@ export default function Login() {
                 <DataPolicyContent />
             </Modal>
 
+            {/* Modal de reset */}
             <Modal
                 open={openModal === 'reset'}
                 title="Restablecer contraseña"
@@ -399,6 +380,9 @@ export default function Login() {
                         <p>
                             Si existe una cuenta asociada a <strong>{resetEmail}</strong>, te hemos enviado un correo
                             con instrucciones para restablecer tu contraseña.
+                        </p>
+                        <p style={{ color: '#666', marginTop: '-.25rem' }}>
+                            Revisa también tu carpeta de <strong>SPAM</strong> por si el correo llega allí.
                         </p>
                         <div className="modal-actions">
                             <button className="back-btn" type="button" onClick={() => setOpenModal(null)}>
@@ -421,6 +405,9 @@ export default function Login() {
                         <p style={{ color: '#666', marginTop: '-.25rem' }}>
                             Te enviaremos un enlace para crear una nueva contraseña.
                         </p>
+                        <p style={{ color: '#666', marginTop: '-.5rem' }}>
+                            Revisa también tu carpeta de <strong>SPAM</strong> por si el correo llega allí.
+                        </p>
                         <div className="modal-actions">
                             <button className="back-btn" type="submit" disabled={resetBusy}>
                                 {resetBusy ? 'Enviando…' : 'Enviar enlace'}
@@ -432,6 +419,30 @@ export default function Login() {
                     </form>
                 )}
             </Modal>
+
+            {/* Toast de error de login – esquina INFERIOR derecha */}
+            {loginToast && (
+                <div
+                    className="toast show"
+                    role="alert"
+                    aria-live="assertive"
+                    // override de posición: abajo-derecha (sin tocar CSS global)
+                    style={{ position: 'fixed', right: 28, bottom: 24, top: 'auto', zIndex: 998 }}
+                >
+                    <div className="toast-icon" aria-hidden="true">⚠️</div>
+                    <div className="toast-body">
+                        <div className="toast-title">No se pudo iniciar sesión</div>
+                        <div className="toast-text">{loginToast}</div>
+                    </div>
+                    <button
+                        className="toast-close"
+                        onClick={() => setLoginToast(null)}
+                        aria-label="Cerrar notificación"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
         </main>
     );
 }

@@ -61,8 +61,8 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
     };
     const INLINE = { display: "flex", gap: ".5rem", alignItems: "center" };
 
-    const GREEN = "#7FE08A";
-    const RED = "#E74C3C";
+    const GREEN = "#5FA868";
+    const RED = "#c4374c";
 
     return (
         <div className="modal-overlay" onClick={onClose}>

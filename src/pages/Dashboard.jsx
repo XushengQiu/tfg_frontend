@@ -81,6 +81,8 @@ export default function Dashboard() {
     const headerRef = useRef(null);
     const titleRef  = useRef(null);
 
+    const [showWelcome, setShowWelcome] = useState(false);
+
     const toggleSort = (key) => {
         setSortDir((prevDir) =>
             sortKey === key ? (prevDir === "asc" ? "desc" : "asc") : "asc"
@@ -147,6 +149,14 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadData]);
 
+    useEffect(() => {
+        if (location.state?.firstVisit) {
+            setShowWelcome(true);
+            navigate(".", { replace: true, state: null }); // limpia el state
+        }
+    }, [location.state, navigate]);
+
+
     // NUEVO: fija la CSS var --title-w con el ancho real del <h1> y re-calcula en cambios
     useEffect(() => {
         const headerEl = headerRef.current;
@@ -196,7 +206,7 @@ export default function Dashboard() {
     };
 
     const objectiveLabel = (g) =>
-        g.tipo === "Bool" ? "Boolean" : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
+        g.tipo === "Bool" ? "Check" : `${g.valorObjetivo ?? "-"} ${g.unidad ?? ""}`.trim();
 
     const createdLabel = (g) => fmtDateOnly(g.fecha);
 
@@ -292,7 +302,7 @@ export default function Dashboard() {
     const handleFinalize = (id) =>
         openConfirm({
             title: "Finalizar meta",
-            message: "¿Marcar esta meta como COMPLETADA?\nEsta acción es irreversible.",
+            message: "¿Quieres marcar esta meta como COMPLETADA?\nEsta acción es irreversible.",
             confirmText: "Aceptar",
             confirmClass: "btn-soft-success", // verde suave #63db60
             cancelText: "Cancelar",
@@ -336,7 +346,7 @@ export default function Dashboard() {
     const handleDelete = (id) =>
         openConfirm({
             title: "Eliminar meta",
-            message: "¿Eliminar esta meta?",
+            message: "¿Quieres ELIMINAR esta meta?\nEsta acción es irreversible.",
             confirmText: "Eliminar",
             confirmClass: "delete-btn", // rojo actual
             onConfirm: async () => await doDeleteGoal(id),
@@ -499,12 +509,19 @@ export default function Dashboard() {
                     ? await updateGoalBool(editGoal._id, body)
                     : await updateGoalNum(editGoal._id, body);
 
-            // actualiza localmente con lo que pediste
-            const locallyUpdated = { ...editGoal, ...body };
+            // ← PRESERVA los registros si esta meta es la seleccionada
+            const base =
+                (selectedGoal && selectedGoal._id === editGoal._id
+                    ? selectedGoal
+                    : goals.find((g) => g._id === editGoal._id) || editGoal);
+
+            const locallyUpdated = { ...base, ...body };
+
             setGoals((curr) =>
                 curr.map((g) => (g._id === editGoal._id ? { ...g, ...locallyUpdated } : g))
             );
             syncSelected(locallyUpdated);
+            ensureGoalDetail(locallyUpdated); // por si el objeto no trae registros
             setEditGoal(null);
 
             const payload = res?.data ?? {};
@@ -514,18 +531,19 @@ export default function Dashboard() {
             if (payload.meta) {
                 upsertGoal(payload.meta);
                 syncSelected(payload.meta);
+                ensureGoalDetail(payload.meta);
             } else if (Array.isArray(payload.metas)) {
                 const fromServer = payload.metas.find((m) => m._id === locallyUpdated._id);
                 if (fromServer) {
                     upsertGoal(fromServer);
                     syncSelected(fromServer);
+                    ensureGoalDetail(fromServer);
                 }
             }
         } catch (e) {
             setError(apiError(e, "No se pudo actualizar la meta."));
         }
     };
-
 
     // ── Comparadores para ordenación ─────────────────────────────
     const startMillis = (g) => {
@@ -736,7 +754,7 @@ export default function Dashboard() {
                         {stats ? (
                             <div className="stats-content">
                                 <p>
-                                    Total
+                                    Metas totales
                                     <br />
                                     <strong>{stats.totalMetas}</strong>
                                 </p>
@@ -800,12 +818,34 @@ export default function Dashboard() {
                 </div>
             )}
 
+            {showWelcome && (
+                <div className="modal-overlay">
+                    <div className="modal" role="dialog" aria-modal="true">
+                        <h2 className="confirm-text">🥳¡Bienvenido a GoLife!🥳</h2>
+                        <p className="modal-msg confirm-text">
+                            Ya puedes empezar a crear y seguir tus metas. 🏁
+                            {"\n"}
+                            ¿Quieres aprender a usar la aplicación? 🤔
+                            {"\n"}
+                            Abre el <strong>tutorial</strong>: lo encontrarás en la barra superior,
+                            a la izquierda del botón de perfil, identificado con el icono de interrogación (?).
+                        </p>
+                        <div className="modal-actions">
+                            <button className="back-btn" onClick={() => setShowWelcome(false)}>
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {/* ——— Confirmación bonita (reemplaza a window.confirm) ——— */}
             {confirmDlg && (
                 <div className="modal-overlay">
                     <div className="modal" role="dialog" aria-modal="true">
                         {confirmDlg.title ? <h2>{confirmDlg.title}</h2> : null}
-                        <p className="modal-msg">{confirmDlg.message}</p>
+                        <p className="modal-msg confirm-text">{confirmDlg.message}</p>
                         <div className="modal-actions" style={{ justifyContent: "space-between" }}>
                             <button
                                 className={confirmDlg.cancelClass || "back-btn"}
