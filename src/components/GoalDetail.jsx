@@ -2,6 +2,10 @@
 import React from "react";
 import "../index.css";
 
+// 👇 nuevos iconos
+import trueIcon from "../assets/icons/true.png";
+import falseIcon from "../assets/icons/false.png";
+
 function fmtFechaDateThenWeekday(iso) {
     const d = new Date(iso);
     const fecha = d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -58,7 +62,21 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
                                     <tr key={r.fecha}>
                                         <td>{fmtFechaDateThenWeekday(r.fecha)}</td>
                                         <td style={{ textAlign: "center" }}>
-                                            {goal.tipo === "Bool" ? (r.valorBool ? "✅" : "❌") : r.valorNum}
+                                            {goal.tipo === "Bool" ? (
+                                                <img
+                                                    src={r.valorBool ? trueIcon : falseIcon}
+                                                    alt={r.valorBool ? "Sí" : "No"}
+                                                    style={{
+                                                        height: "1em",
+                                                        width: "1em",
+                                                        verticalAlign: "middle",
+                                                        display: "inline-block",
+                                                        objectFit: "contain",
+                                                    }}
+                                                />
+                                            ) : (
+                                                r.valorNum
+                                            )}
                                         </td>
                                         <td style={{ textAlign: "center" }}>
                                             {canDelete ? (
