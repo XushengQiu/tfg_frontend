@@ -1,13 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDPwiDmO6-X5z87wWk9LU98hNCTK4m16DE",
-    authDomain: "golifefrontend2.firebaseapp.com",
-    projectId: "golifefrontend2",
-    storageBucket: "golifefrontend2.firebasestorage.app",
-    messagingSenderId: "1085325627379",
-    appId: "1:1085325627379:web:8a5585d8608601dfbacc86",
+    apiKey: process.env.REACT_APP_FB_API_KEY,
+    authDomain: process.env.REACT_APP_FB_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FB_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FB_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FB_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FB_APP_ID,
+    measurementId: process.env.REACT_APP_FB_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);

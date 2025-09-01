@@ -1,10 +1,229 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Error 404</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>GoLife · Página no encontrada (404)</title>
+    <meta name="robots" content="noindex" />
+
+    <style>
+        :root{
+            --brand: #4FBE98;      /* color base */
+            --brand-600: #3BAA84;  /* hover */
+            --bg-soft: #EAF7F1;    /* fondos grandes suaves */
+            --accent: #F28749;     /* CTA naranja */
+            --ink: #0f172a;
+            --muted: #5b6471;
+            --card: #ffffff;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body{
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji","Segoe UI Emoji";
+            color: var(--ink);
+            background: var(--bg-soft);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .wrap{
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .card{
+            width: min(920px, 100%);
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0,0,0,.12);
+            padding: clamp(20px, 4vw, 36px);
+        }
+
+        .brand{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .brand img{
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+        }
+        .brand-name{
+            font-weight: 800;
+            letter-spacing: .3px;
+            font-size: 20px;
+        }
+
+        .status{
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 6px 14px;
+            align-items: center;
+            margin: 8px 0 22px;
+        }
+        .code{
+            font-size: clamp(38px, 8vw, 64px);
+            font-weight: 900;
+            line-height: 1;
+            color: var(--brand-600);
+        }
+        .title{
+            margin: 0;
+            font-size: clamp(20px, 3vw, 26px);
+        }
+        .lead{
+            margin: 8px 0 0;
+            color: var(--muted);
+        }
+
+        .notice{
+            margin: 18px 0 22px;
+            padding: 12px 14px;
+            border: 1px solid rgba(79,190,152,.25);
+            background: linear-gradient(0deg, rgba(79,190,152,.06), rgba(79,190,152,.06));
+            border-radius: 12px;
+        }
+
+        .tips{
+            margin: 24px 0 10px;
+            padding-left: 18px;
+            color: var(--muted);
+        }
+        .tips li{ margin: 6px 0; }
+
+        .contact{
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+        .contact a{
+            color: var(--brand-600);
+            text-decoration: none;
+            border-bottom: 1px dashed currentColor;
+        }
+        .contact a:hover{ opacity: .9; }
+
+        footer{
+            margin-top: 22px;
+            font-size: 12px;
+            color: #8c93a3;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .pill{
+            background: #f1f5f9;
+            border-radius: 999px;
+            padding: 4px 8px;
+        }
+    </style>
 </head>
 <body>
+<main class="wrap">
+    <section class="card" role="document" aria-labelledby="t404">
+        <header class="brand" aria-label="Marca">
+            <img src="../assets/icons/logo.svg" alt="Logo de GoLife" />
+            <div class="brand-name">GoLife</div>
+        </header>
 
+        <div class="status">
+            <div class="code" aria-hidden="true">404</div>
+            <div>
+                <h1 id="t404" class="title">Página no encontrada</h1>
+                <p class="lead">
+                    Ups, no hemos podido encontrar la página que estabas buscando.
+                    Es posible que el enlace haya cambiado, esté mal escrito o la página ya no exista.
+                </p>
+            </div>
+        </div>
+
+        <div class="notice" role="status" aria-live="polite">
+            <strong>Disculpa las molestias.</strong>
+            Si estás viendo esto durante un despliegue o una incidencia puntual,
+            <em>se reanudará pronto el servicio</em>.
+        </div>
+
+        <!-- Botones eliminados a petición -->
+
+        <ul class="tips">
+            <li>Comprueba que la URL esté bien escrita.</li>
+            <li>Si llegaste aquí desde un enlace, puede que esté desactualizado.</li>
+            <li>Si el problema persiste, escríbenos con el botón “Informar del problema”.</li>
+        </ul>
+
+        <p class="contact">
+            ¿Dudas o necesitas asistencia? Escríbenos a
+            <a id="mailto" href="mailto:golifepfg@gmail.com">golifepfg@gmail.com</a>.
+        </p>
+
+        <footer>
+            <span class="pill" id="net-indicator">Comprobando conexión…</span>
+            <span>© <span id="year"></span> GoLife</span>
+        </footer>
+    </section>
+</main>
+
+<script>
+    // Año actual
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Indicador de red
+    const net = document.getElementById('net-indicator');
+    function renderOnlineState() {
+        const online = navigator.onLine;
+        net.textContent = online ? 'Conectado a internet' : 'Sin conexión · revisa tu red';
+        net.style.background = online ? '#ecfeff' : '#fff7ed';
+    }
+    window.addEventListener('online', renderOnlineState);
+    window.addEventListener('offline', renderOnlineState);
+    renderOnlineState();
+
+    // Mailto con contexto (URL, referrer, user-agent y hora)
+    (function () {
+        const to = 'golifepfg@gmail.com';
+        const subject = encodeURIComponent('GoLife · Incidencia 404');
+        const body = encodeURIComponent(
+            [
+                'Hola equipo de GoLife,',
+                '',
+                'He encontrado un 404 en la aplicación.',
+                '',
+                '• URL: ' + location.href,
+                '• Referer: ' + (document.referrer || '—'),
+                '• User-Agent: ' + navigator.userAgent,
+                '• Hora: ' + new Date().toString(),
+                '',
+                'Descripción (qué esperaba ver / qué hice):',
+                ''
+            ].join('\n')
+        );
+        const link = 'mailto:' + to + '?subject=' + subject + '&body=' + body;
+
+        // Solo si existen los nodos (hemos quitado los botones)
+        const report = document.getElementById('report-issue');
+        if (report) report.setAttribute('href', link);
+
+        const mail = document.getElementById('mailto');
+        if (mail) mail.setAttribute('href', 'mailto:' + to);
+    })();
+
+    // Los siguientes elementos pueden no existir (botones eliminados)
+    const goBack = document.getElementById('go-back');
+    if (goBack) goBack.onclick = function () {
+        if (history.length > 1) history.back();
+        else window.location.assign('/');
+    };
+
+    const reloadBtn = document.getElementById('do-reload');
+    if (reloadBtn) reloadBtn.onclick = function () { window.location.reload(); };
+</script>
 </body>
 </html>
