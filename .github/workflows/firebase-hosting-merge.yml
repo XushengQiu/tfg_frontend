@@ -13,14 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # (opcional, pero recomendable) fija Node LTS
       - name: Use Node.js 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
 
-      # ⬇️ CREA EL .env.production ANTES DEL BUILD
       - name: Create .env.production from GitHub Secrets
         shell: bash
         run: |
