@@ -641,10 +641,10 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 
 /* Logo delante de "Mis metas" */
 .dashboard-title .title-logo{
-  height: 1.2em;          /* ↑ un pelín más grande (antes 1em) */
+  height: 1.3em;          /* ↑ un pelín más grande (antes 1em) */
   width: auto;
   display: inline-block;
-  margin-right: .5rem;
+  margin-right: 1.2rem;
   vertical-align: middle;
   transform: translateY(-4px); /* ↑ súbelo 2px; ajusta a tu gusto (-1px/-3px) */
 }
@@ -729,3 +729,41 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 }
 
 .confirm-text { text-align: center; }
+
+/* ——— Tabla vacía: mensaje centrado ——— */
+.goals-table-wrapper{ position: relative; } /* suma a overflow:visible existente */
+
+.goals-empty-overlay{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none; /* no bloquea el botón "Crear meta" ni la UI */
+}
+
+.goals-empty-card{
+  pointer-events: auto;
+  background: rgba(255,255,255,.96);
+  border: 1px dashed #cfd8dc;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,.08);
+  max-width: min(90%, 520px);
+}
+
+.goals-empty-card strong{
+  display: block;
+  margin-bottom: .25rem;
+  font-size: 1.05rem;
+}
+
+.goals-empty-card div{
+  color: #555;
+}
+
+.goals-table-wrapper {
+  min-height: 240px; /* ajusta el valor si quieres más espacio */
+}

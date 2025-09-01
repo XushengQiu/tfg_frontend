@@ -675,6 +675,14 @@ export default function Dashboard() {
                 <div className="left-pane card">
                     <div className="goals-scroll">
                         <div className="goals-table-wrapper">
+                            {goals.length === 0 && (
+                                <div className="goals-empty-overlay" role="status" aria-live="polite">
+                                    <div className="goals-empty-card">
+                                        <strong>¡Crea tu primera meta!</strong>
+                                        <div>Pulsa “Crear meta” para empezar a usar la aplicación.</div>
+                                    </div>
+                                </div>
+                            )}
                             <table className="goals-table">
                                 <thead>
                                 <tr>

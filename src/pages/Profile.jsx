@@ -273,7 +273,7 @@ export default function Profile() {
                         <p className="confirm-text">
                             ¿Estás seguro de querer <strong>ELIMINAR</strong> esta cuenta?
                             <br />
-                            Esta acción es irreversible y se borrará todos sus datos.
+                            Esta acción es irreversible y se borrará todos tus datos.
                         </p>
                         <div className="modal-actions">
                             <button className="delete-btn" disabled={timer > 0} onClick={handleDelete}>

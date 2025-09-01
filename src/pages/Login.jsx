@@ -145,7 +145,7 @@ export default function Login() {
             display: 'grid',
             gridTemplateColumns: '40% 60%',
             background:
-                'linear-gradient(to bottom, #002c89 0%, #002c89 50%, #EAF7F1 50%, #EAF7F1 100%)',
+                'linear-gradient(to bottom, #00227b 0%, #00227b 50%, #EAF7F1 50%, #EAF7F1 100%)',
         },
         left: { position: 'relative', overflow: 'hidden' },
         leftBg: {
