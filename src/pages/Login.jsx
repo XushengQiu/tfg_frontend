@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth-context';
 import Modal from '../components/Modal';
+import { getProfile } from '../services/api';
 import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
 
@@ -54,13 +55,12 @@ export default function Login() {
     const [resetBusy, setResetBusy] = useState(false);
     const [resetSent, setResetSent] = useState(false);
 
-    // toast de error de login
-    const [loginToast, setLoginToast] = useState(null);
+    const [toast, setToast] = useState(null); // { title, text } | null
     useEffect(() => {
-        if (!loginToast) return;
-        const id = setTimeout(() => setLoginToast(null), 5000);
+        if (!toast) return;
+        const id = setTimeout(() => setToast(null), 5000);
         return () => clearTimeout(id);
-    }, [loginToast]);
+    }, [toast]);
 
     // ── Login con email ──────────────────────────────────────────
     const doEmailLogin = async (e) => {
@@ -69,18 +69,25 @@ export default function Login() {
         setBusy(true);
         try {
             await signInWithEmailAndPassword(getAuth(), email.trim(), password);
-            navigate('/dashboard', { replace: true });
+            try {
+                await getProfile();
+                navigate('/dashboard', { replace: true });
+            } catch {
+                navigate('/onboarding', { replace: true });
+            }
+
         } catch (err) {
             const code = err?.code || '';
+            const base = { title: 'No se pudo iniciar sesión' };
             if (
                 code === 'auth/user-not-found' ||
                 code === 'auth/wrong-password' ||
                 code === 'auth/invalid-credential' ||
                 code === 'auth/invalid-email'
             ) {
-                setLoginToast('Las credenciales no son correctas.');
+                setToast({ ...base, text: 'Las credenciales no son correctas.' });
             } else {
-                setLoginToast(err?.message || 'No se pudo iniciar sesión.');
+                setToast({ ...base, text: err?.message || 'No se pudo iniciar sesión.' });
             }
         } finally {
             setBusy(false);
@@ -92,7 +99,10 @@ export default function Login() {
         e?.preventDefault();
         if (!email || !password) return;
         if (password.length < 6) {
-            alert('La contraseña debe tener al menos 6 caracteres (requisito de Firebase).');
+            setToast({
+                title: 'Registro de cuenta',
+                text: 'La contraseña debe tener al menos 6 caracteres (requisito de Firebase).',
+            });
             return;
         }
         setBusy(true);
@@ -100,7 +110,10 @@ export default function Login() {
             await createUserWithEmailAndPassword(getAuth(), email.trim(), password);
             navigate('/onboarding', { replace: true });
         } catch (err) {
-            alert(err?.message || 'No se pudo crear la cuenta.');
+            setToast({
+                title: 'Registro de cuenta',
+                text: err?.message || 'No se pudo crear la cuenta.',
+            });
         } finally {
             setBusy(false);
         }
@@ -117,7 +130,7 @@ export default function Login() {
         e?.preventDefault();
         const mail = (resetEmail || '').trim();
         if (!mail) {
-            alert('Introduce un correo válido.');
+            setToast({ title: 'Restablecer contraseña', text: 'Introduce un correo válido.' });
             return;
         }
         setResetBusy(true);
@@ -131,7 +144,10 @@ export default function Login() {
             if (err?.code === 'auth/user-not-found') {
                 setResetSent(true); // respuesta genérica
             } else {
-                alert(err?.message || 'No se pudo enviar el correo de restablecimiento.');
+                setToast({
+                    title: 'Restablecer contraseña',
+                    text: err?.message || 'No se pudo enviar el correo de restablecimiento.',
+                });
             }
         } finally {
             setResetBusy(false);
@@ -221,15 +237,6 @@ export default function Login() {
             <section style={S.left} aria-label="Fondo biblioteca y créditos">
                 <div style={S.leftBg} />
                 <div style={S.leftContent}>
-                    <div style={S.midText}>
-                        <strong style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.25)' }}>
-                            Proyecto de Fin de Grado realizado por:
-                        </strong>
-                        <ul style={{ margin: '.4rem 0 0 1rem' }}>
-                            <li>Xusheng Qiu Huang</li>
-                            <li>Eduardo Segarra Ledesma</li>
-                        </ul>
-                    </div>
                 </div>
             </section>
 
@@ -420,23 +427,21 @@ export default function Login() {
                 )}
             </Modal>
 
-            {/* Toast de error de login – esquina INFERIOR derecha */}
-            {loginToast && (
+            {toast && (
                 <div
                     className="toast show"
                     role="alert"
                     aria-live="assertive"
-                    // override de posición: abajo-derecha (sin tocar CSS global)
                     style={{ position: 'fixed', right: 28, bottom: 24, top: 'auto', zIndex: 998 }}
                 >
                     <div className="toast-icon" aria-hidden="true">⚠️</div>
                     <div className="toast-body">
-                        <div className="toast-title">No se pudo iniciar sesión</div>
-                        <div className="toast-text">{loginToast}</div>
+                        <div className="toast-title">{toast.title}</div>
+                        <div className="toast-text">{toast.text}</div>
                     </div>
                     <button
                         className="toast-close"
-                        onClick={() => setLoginToast(null)}
+                        onClick={() => setToast(null)}
                         aria-label="Cerrar notificación"
                     >
                         ×
