@@ -45,9 +45,16 @@ export function AuthProvider({ children }) {
                 const { data } = await getProfile();
                 setProfile(data);
             } catch (err) {
-                setProfile(null);                    // 404 si aún no existe en tu BD
-                if (window.location.pathname !== '/onboarding') {
-                    navigate('/onboarding', { replace:true });
+                setProfile(null); // 404 si aún no existe en tu BD
+
+                const path = window.location.pathname;
+                if (path === '/login' || path === '/onboarding') {
+                    // Estás logueando o ya en onboarding → no cierres sesión ni redirijas.
+                    // Login/Onboarding decidirán el siguiente paso (crear perfil).
+                } else {
+                    // Usuario con sesión Firebase pero sin perfil y en otra ruta: vuelve a Login.
+                    try { await signOut(auth); } catch {}
+                    navigate('/login', { replace: true, state: { reason: 'need_onboarding' } });
                 }
             }
             setLoading(false);

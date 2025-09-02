@@ -794,7 +794,7 @@ function BooleanCalendar({ goal }) {
                     <strong>{streak.label}</strong>
                     <span
                         className="streak-badge"
-                        aria-label={`Racha de ${streak.count} días`}
+                        aria-label={`Racha de ${streak.count} ${streak.count === 1 ? "día" : "días"}`}
                         style={{ position: "relative", display: "inline-block", width: 26, height: 26, verticalAlign: "middle" }}
                     >
                         <img
@@ -817,7 +817,7 @@ function BooleanCalendar({ goal }) {
                             {streak.count}
                         </span>
                     </span>
-                    <span>días</span>
+                    <span>{streak.count === 1 ? "día" : "días"}</span>
                 </div>
             )}
         </div>

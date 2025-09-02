@@ -153,7 +153,7 @@ export default function Dashboard() {
                 popover: { title: 'Crear meta', description: 'Haz clic aquí para crear una meta nueva, definir su objetivo y periodo. Dentro tienes otro tutorial!', side: 'left' } },
 
             { element: '#tour-table',
-                popover: { title: 'Lista de metas', description: 'Pulsa en una meta para desplegar sus registros y descripción.', side: 'top' } },
+                popover: { title: 'Lista de metas', description: 'Pulsa en una meta para desplegar sus registros, descripción y gráficos.', side: 'top' } },
 
             { element: '#tour-search',
                 popover: { title: 'Buscar', description: 'Escribe aquí para filtrar tus metas por nombre.', side: 'bottom' } },
@@ -163,13 +163,13 @@ export default function Dashboard() {
 
             // Botones de la fila (IDs vienen de GoalRow)
             { element: '[id^="tour-row-entry-"]',
-                popover: { title: 'Registro', description: 'Añada un registro para esta meta.', side: 'left' } },
+                popover: { title: 'Registro', description: 'Añade un registro a esta meta. Puedes introducir uno al día y te ayudaran a mantener un historial de tu avances y ser constante.', side: 'left' } },
 
             { element: '[id^="tour-row-finalize-"]',
-                popover: { title: 'Finalizar', description: 'Marca la meta como completada. Luego ya no podrás editarla ni crear nuevos registros, pero sí eliminar', side: 'left' } },
+                popover: { title: 'Finalizar', description: 'Marca la meta como completada. Haz esto cuando consideres que has completado tu meta. Una vez completada, una meta no puede tener nuevos registros ni editarse, pero si eliminarse', side: 'left' } },
 
             { element: '[id^="tour-row-edit-"]',
-                popover: { title: 'Editar', description: 'Cambia nombre, descripción, periodo u objetivo.', side: 'left' } },
+                popover: { title: 'Editar', description: 'Puedes editar la meta para modificar su nombre, descripción, periodo u objetivo. Si embargo, una meta no puede cambiar su fecha de inicio, o su objetivo de Check a Numeral o viceversa.', side: 'left' } },
 
             { element: '[id^="tour-row-delete-"]',
                 popover: { title: 'Eliminar', description: 'Borra la meta (y sus registros) de forma permanente.', side: 'left' } },
@@ -184,13 +184,13 @@ export default function Dashboard() {
 
             // NUEVO: Insight (calendario para Check, gráfico para Num)
             { element: '#tour-insight',
-                popover: { title: 'Calendario / Gráfico', description: 'Las metas tipo Check muestran un calendario navegable por meses. Las metas Num muestran un gráfico con filtros (periodo, rango manual y primeros/últimos registros).', side: 'left' } },
+                popover: { title: 'Calendario / Gráfico', description: 'Las metas de objetivo Check muestran un calendario navegable por meses. Las metas de objeetivo numeral muestran un gráfico con filtros (periodo, rango manual y primeros/últimos registros).', side: 'left' } },
 
             { element: '#tour-stats',
                 popover: { title: 'Estadísticas', description: 'Resumen rápido de tu actividad y progreso.', side: 'left' } },
 
             { element: '#tour-profile',
-                popover: { title: 'Tu perfil', description: 'Accede a tus datos, leer los términos y condiciones, leer el tratamiento de datos, cerrar sesión, editar datos, eliminar la cuenta. Dentro tienes otro tutorial!', side: 'left' } },
+                popover: { title: 'Tu perfil', description: 'Aquí puedes acceder a tu perfil, dentro podrás ver tus datos y realizar otras acciones como cerrar sesión o borrar tu cuenta. Dentro tienes otro tutorial que te explicará todo si tienes dudas al respecto.', side: 'left' } },
         ];
 
         const d = driver({
