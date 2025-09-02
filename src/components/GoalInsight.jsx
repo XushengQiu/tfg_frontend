@@ -113,7 +113,7 @@ export default function GoalInsight({ goal }) {
     if (!Array.isArray(goal.registros)) return <div className="insight-empty">Cargando registros…</div>;
 
     return (
-        <div className="insight-container">
+        <div className="insight-container" id="tour-insight">
             {goal.tipo === "Num" ? <NumericChart goal={goal} /> : <BooleanCalendar goal={goal} />}
         </div>
     );

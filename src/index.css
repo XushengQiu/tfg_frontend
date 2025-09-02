@@ -29,6 +29,13 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 /* ↑ “Mis datos” al doble */
 .profile-header h2{ font-size:2em; line-height:1.05; margin:0; }
 
+/* Contenedor para el botón de tutorial + volver (derecha) */
+.profile-actions{
+  display:flex;
+  align-items:center;
+  gap:1rem;
+}
+
 /* (CAMBIO) Quitamos el recuadro del bloque central pero conservamos el texto */
 .profile-card{
   /* centrado usando el ancho real del contenido */
@@ -57,7 +64,18 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   white-space: normal;       /* por si algún reset lo cambió */
 }
 
-.profile-footer{ margin-top:auto; display:flex; justify-content:center; gap:2rem; padding-bottom:3rem; }
+.profile-footer{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;                 /* separada del borde inferior */
+  transform: translateX(-50%);  /* centrada */
+  display:flex;
+  justify-content:center;
+  gap:2rem;
+  z-index: 998;                 /* por encima del logo (997) y por debajo de los modales (999) */
+  margin: 0;
+  padding: 0;
+}
 
 /* Botones de Profile (mismo radio suave en los cuatro) */
 .logout-btn,.delete-btn,.back-btn,.edit-btn{
@@ -730,6 +748,13 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 
 .confirm-text { text-align: center; }
 
+.modal-msg .inline-icon{
+  height: 1em;      /* mismo alto que la letra */
+  width: auto;
+  vertical-align: -0.12em; /* lo baja un pelín para alinearlo ópticamente */
+  margin: 0 .15em;  /* espacio a los lados para que respire */
+}
+
 /* ——— Tabla vacía: mensaje centrado ——— */
 .goals-table-wrapper{ position: relative; } /* suma a overflow:visible existente */
 
@@ -767,3 +792,17 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
 .goals-table-wrapper {
   min-height: 240px; /* ajusta el valor si quieres más espacio */
 }
+
+.toast--error{
+  border-left-color: #c4374c;
+  border-top-color: #f3e2e5;
+}
+.toast--error .toast-title{ color:#b3261e; }
+.toast--error .toast-icon{ filter: none; }
+
+.modal-help{
+  position:absolute;
+  top:10px;
+  right:12px;
+}
+.modal-help .avatar-icon{ width:24px; height:24px; }

@@ -17,13 +17,13 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
     if (!goal) {
         return (
             <div className="goal-detail">
-                <div className="goal-registros">
+                <div className="goal-registros" id="tour-records">
                     <h3>Registros</h3>
                     <div className="registros-placeholder">
                         Seleccione una meta para ver sus registros.
                     </div>
                 </div>
-                <div className="goal-descripcion">
+                <div className="goal-descripcion" id="tour-goal-desc">
                     <h3>Meta</h3>
                     <p>—</p>
 
@@ -39,8 +39,8 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
     return (
         <div className="goal-detail">
             {/* Registros */}
-            <div className="goal-registros">
-                <h3>Registros</h3>
+            <div className="goal-registros" id="tour-records">
+            <h3>Registros</h3>
 
                 {goal.registros?.length ? (
                     <div style={{ maxHeight: "220px", overflowY: "auto" }}>
@@ -99,7 +99,7 @@ export default function GoalDetail({ goal, fmtFecha, onDeleteRecord }) {
             </div>
 
             {/* Meta + Descripción */}
-            <div className="goal-descripcion">
+            <div className="goal-descripcion" id="tour-goal-desc">
                 <h3>Meta</h3>
                 <p>{goal.nombre}</p>
 
