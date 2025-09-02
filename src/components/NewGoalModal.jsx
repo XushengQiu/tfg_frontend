@@ -1,6 +1,9 @@
 // src/components/NewGoalModal.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import "../index.css";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
+import tutorialIcon from "../assets/icons/tutorial.png";
 
 const todayISO = () => {
     const d = new Date();
@@ -92,6 +95,65 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
         });
     };
 
+    const startNewGoalTour = React.useCallback(() => {
+        const steps = [
+            { element: '#newgoal-name',
+                popover: {
+                    title: 'Nombre',
+                    description: 'Entre 1 y 50 caracteres.',
+                    side: 'top'
+                }},
+
+            { element: '#newgoal-period',
+                popover: {
+                    title: 'Periodo',
+                    description: 'Tiempo durante el que seguirás la meta. Si es para siempre o no lo tienes claro, marca Indefinido.',
+                    side: 'top'
+                }},
+
+            { element: '#newgoal-obj',
+                popover: {
+                    title: 'Objetivo',
+                    description: 'Define un objetivo numérico (número + unidad) o marca Check si es un sí/no.',
+                    side: 'top'
+                }},
+
+            { element: '#newgoal-date',
+                popover: {
+                    title: 'Fecha de inicio',
+                    description: 'Desde cuándo empiezas a contabilizar la meta.',
+                    side: 'top'
+                }},
+
+            { element: '#newgoal-desc',
+                popover: {
+                    title: 'Descripción',
+                    description: 'Opcional. Hasta 300 caracteres para anotar detalles.',
+                    side: 'top'
+                }},
+
+            { element: '#newgoal-actions',
+                popover: {
+                    title: 'Acciones',
+                    description: 'Cancelar o Crear la meta cuando completes los campos obligatorios.',
+                    side: 'top'
+                }},
+        ];
+
+        const d = driver({
+            steps,
+            showProgress: true,
+            progressText: '{{current}} de {{total}}',
+            prevBtnText: 'Anterior',
+            nextBtnText: 'Siguiente',
+            doneBtnText: 'Finalizar',
+            overlayClick: false,
+            disableActiveInteraction: true   // ← bloquea los clics mientras estás en cada paso
+        });
+
+        d.drive();
+    }, []);
+
     if (!open) return null;
 
     /* Estilo compacto “como antes” */
@@ -124,13 +186,23 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     borderRadius: 14,
                 }}
             >
+                <button
+                    type="button"
+                    className="avatar-btn modal-help"
+                    id="newgoal-help"
+                    onClick={startNewGoalTour}
+                    title="Abrir tutorial"
+                    aria-label="Abrir tutorial"
+                >
+                    <img src={tutorialIcon} alt="Abrir tutorial" className="avatar-icon" />
+                </button>
                 <h3 style={{ textAlign: "center", marginTop: 0, marginBottom: "10px" }}>
                     Nueva meta
                 </h3>
 
                 <form onSubmit={submit} style={{ display: "grid", gap: ".6rem" }}>
                     {/* Nombre */}
-                    <label style={ROW}>
+                    <label style={ROW} id="newgoal-name">
                         <span>Nombre*:</span>
                         <input
                             style={INPUT}
@@ -143,12 +215,12 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     </label>
 
                     {/* Periodo en UNA línea */}
-                    <label style={ROW}>
+                    <label style={ROW} id="newgoal-period">
                         <span>Periodo*:</span>
-                        <div style={{ ...INLINE, opacity: periodoIndef ? 0.55 : 1 }}>
+                        <div style={{ ...INLINE }}>
                             <input
                                 type="number"
-                                style={{ ...INPUT, width: 110 }}
+                                style={{ ...INPUT, width: 110, height: 36, opacity: periodoIndef ? 0.55 : 1 }}
                                 disabled={periodoIndef}
                                 required={!periodoIndef}
                                 value={periodoNum}
@@ -158,7 +230,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                 step="1"
                             />
                             <select
-                                style={{ ...INPUT }}
+                                style={{ ...INPUT, height: 36, opacity: periodoIndef ? 0.55 : 1 }}
                                 disabled={periodoIndef}
                                 value={periodoUnit}
                                 onChange={(e) => setPeriodoUnit(e.target.value)}
@@ -183,18 +255,18 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     </label>
 
                     {/* Objetivo en UNA línea */}
-                    <label style={ROW}>
+                    <label style={ROW} id="newgoal-obj">
                         <span>Objetivo*:</span>
-                        <div style={{ ...INLINE, opacity: isBool ? 0.55 : 1 }}>
+                        <div style={{ ...INLINE }}>
                             <input
                                 type="number"
                                 step="0.01"
-                                min="0"
+                                min="0.01"
                                 disabled={isBool}
                                 required={!isBool}
                                 value={objetivoNum}
                                 onChange={(e) => setObjetivoNum(e.target.value)}
-                                style={{ ...INPUT, width: 140 }}
+                                style={{ ...INPUT, width: 140, height: 40, boxSizing: "border-box", opacity: isBool ? 0.55 : 1 }}
                             />
                             <input
                                 placeholder="unidad"
@@ -202,7 +274,8 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                 required={!isBool}
                                 value={objetivoUnidad}
                                 onChange={(e) => setObjetivoUnidad(e.target.value)}
-                                style={{ ...INPUT, width: 140 }}
+                                maxLength={20}
+                                style={{ ...INPUT, width: 140, height: 40, boxSizing: "border-box", opacity: isBool ? 0.55 : 1, transform: "translateY(2px)" }}
                             />
 
                             <label
@@ -219,8 +292,8 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     </label>
 
                     {/* Fecha */}
-                    <label style={ROW}>
-                        <span>Fecha inicio:</span>
+                    <label style={ROW} id="newgoal-date">
+                    <span>Fecha inicio*:</span>
                         <input
                             type="date"
                             value={fechaInicio}
@@ -230,8 +303,8 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                     </label>
 
                     {/* Descripción */}
-                    <label style={ROW}>
-                        <span>Descripción:</span>
+                    <label style={ROW} id="newgoal-desc">
+                    <span>Descripción:</span>
                         <textarea
                             rows={4}
                             value={descripcion}
@@ -243,10 +316,11 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
 
                     {/* Acciones: un botón en cada extremo */}
                     <div
+                        id="newgoal-actions"
                         className="modal-actions"
                         style={{ justifyContent: "space-between", marginTop: ".4rem" }}
                     >
-                        <button
+                    <button
                             type="button"
                             onClick={onClose}
                             style={{

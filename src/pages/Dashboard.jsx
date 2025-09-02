@@ -9,7 +9,7 @@ import appLogo from "../assets/icons/logo.svg";
 
 import {
     getProfile,
-    getGoalById,        // lo seguimos usando para traer REGISTROS del detalle
+    getGoalById,
     createGoalBool,
     createGoalNum,
     updateGoalBool,
@@ -28,7 +28,10 @@ import GoalRow from "../components/GoalRow";
 import GoalDetail from "../components/GoalDetail";
 import GoalInsight from "../components/GoalInsight";
 
-import profileIcon from "../assets/icons/profile.svg";   // avatar por defecto (email+password)
+import profileIcon from "../assets/icons/profile.svg";
+import tutorialIcon from "../assets/icons/tutorial.png";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 import "../index.css";
 
 /* Extrae mensaje de error legible */
@@ -72,6 +75,136 @@ export default function Dashboard() {
 
     // ── Buscador (filtra solo por nombre, visualmente) ──────────
     const [search, setSearch] = useState("");
+    const TUTORIAL_GOAL_NAME = "Meta demo (tutorial)";
+
+    // Crea (si hace falta) una meta de ejemplo para el tour y la enfoca en el buscador
+    const ensureTutorialGoal = useCallback(async () => {
+        // ¿Ya existe una apta (no finalizada)?
+        let demo = goals.find(g => g.nombre === TUTORIAL_GOAL_NAME && !g.finalizado);
+
+        if (!demo) {
+            try {
+                const startISO = "2025-01-01";
+                const res = await createGoalBool({
+                    nombre: TUTORIAL_GOAL_NAME,
+                    descripcion: "Creada automáticamente para el tutorial. Puedes eliminarla al terminar.",
+                    fecha: startISO,
+                    duracionValor: 1,
+                    duracionUnidad: "Indefinido",
+                });
+
+                const payload = res?.data ?? {};
+                if (Array.isArray(payload.metas)) {
+                    setGoals(prev => {
+                        const map = new Map(prev.map(m => [m._id, m]));
+                        for (const m of payload.metas) map.set(m._id, { ...(map.get(m._id) || {}), ...m });
+                        return Array.from(map.values());
+                    });
+                    demo = payload.metas.find(m => m.nombre === TUTORIAL_GOAL_NAME) || null;
+                } else if (payload.meta) {
+                    setGoals(prev => [...prev, payload.meta]);
+                    demo = payload.meta;
+                }
+                if (payload.estadisticas || payload.estadisticasUsuario) {
+                    setStats(payload.estadisticas ?? payload.estadisticasUsuario);
+                }
+            } catch (e) {
+                setError(apiError(e, "No se pudo crear la meta de ejemplo."));
+                throw e;
+            }
+        }
+        // ── crear registros de ejemplo (septiembre 2025) si faltan ──
+        try {
+            if (demo && demo._id) {
+                // Traemos detalle actual para no duplicar fechas
+                const { data: demoDetail } = await getGoalById(demo._id);
+                const existentes = new Set((demoDetail?.registros || []).map(r => r.fecha));
+
+                const TRUES  = ["2025-09-01","2025-09-03","2025-09-05","2025-09-07","2025-09-08","2025-09-09"];
+                const FALSES = ["2025-09-04","2025-09-06"];
+
+                // Creamos sólo los que no existan
+                for (const iso of TRUES) {
+                    if (!existentes.has(iso)) {
+                        try { await createRecordBool(demo._id, { fecha: iso, valorBool: true  }); } catch {}
+                    }
+                }
+                for (const iso of FALSES) {
+                    if (!existentes.has(iso)) {
+                        try { await createRecordBool(demo._id, { fecha: iso, valorBool: false }); } catch {}
+                    }
+                }
+            }
+        } catch {}
+
+        // Enfocamos esa meta en la tabla
+        setSearch(TUTORIAL_GOAL_NAME);
+        setSelectedGoal(null);
+        return demo;
+    }, [goals, setGoals, setStats, setSearch]);
+
+    const runTourWithRow = useCallback(() => {
+        const steps = [
+            { element: 'img.title-logo',
+                popover: { title: '¡Bienvenido a GoLife!', description: 'Aquí empezarás a manejar tus metas como nunca.', side: 'bottom', align: 'start' } },
+
+            // Paso 2: Crear meta (bloqueamos interacción con el botón mientras está enfocado)
+            { element: '#tour-create',
+                popover: { title: 'Crear meta', description: 'Haz clic aquí para crear una meta nueva, definir su objetivo y periodo. Dentro tienes otro tutorial!', side: 'left' } },
+
+            { element: '#tour-table',
+                popover: { title: 'Lista de metas', description: 'Pulsa en una meta para desplegar sus registros y descripción.', side: 'top' } },
+
+            { element: '#tour-search',
+                popover: { title: 'Buscar', description: 'Escribe aquí para filtrar tus metas por nombre.', side: 'bottom' } },
+
+            { element: '#tour-clear',
+                popover: { title: 'Limpiar búsqueda', description: 'Borra el texto del buscador y muestra todas las metas de nuevo.', side: 'bottom' } },
+
+            // Botones de la fila (IDs vienen de GoalRow)
+            { element: '[id^="tour-row-entry-"]',
+                popover: { title: 'Registro', description: 'Añada un registro para esta meta.', side: 'left' } },
+
+            { element: '[id^="tour-row-finalize-"]',
+                popover: { title: 'Finalizar', description: 'Marca la meta como completada. Luego ya no podrás editarla ni crear nuevos registros, pero sí eliminar', side: 'left' } },
+
+            { element: '[id^="tour-row-edit-"]',
+                popover: { title: 'Editar', description: 'Cambia nombre, descripción, periodo u objetivo.', side: 'left' } },
+
+            { element: '[id^="tour-row-delete-"]',
+                popover: { title: 'Eliminar', description: 'Borra la meta (y sus registros) de forma permanente.', side: 'left' } },
+
+            // NUEVO: tabla de registros
+            { element: '#tour-records',
+                popover: { title: 'Tabla de registros', description: 'Aquí verás los registros de la meta seleccionada. Puedes eliminar registros si la meta no está finalizada.', side: 'left' } },
+
+            // NUEVO: Meta y descripción
+            { element: '#tour-goal-desc',
+                popover: { title: 'Meta y descripción', description: 'Aquí se muestra el nombre de la meta seleccionada y su descripción. Te sirve como recordatorio del objetivo y cualquier detalle importante.', side: 'left' } },
+
+            // NUEVO: Insight (calendario para Check, gráfico para Num)
+            { element: '#tour-insight',
+                popover: { title: 'Calendario / Gráfico', description: 'Las metas tipo Check muestran un calendario navegable por meses. Las metas Num muestran un gráfico con filtros (periodo, rango manual y primeros/últimos registros).', side: 'left' } },
+
+            { element: '#tour-stats',
+                popover: { title: 'Estadísticas', description: 'Resumen rápido de tu actividad y progreso.', side: 'left' } },
+
+            { element: '#tour-profile',
+                popover: { title: 'Tu perfil', description: 'Accede a tus datos, leer los términos y condiciones, leer el tratamiento de datos, cerrar sesión, editar datos, eliminar la cuenta. Dentro tienes otro tutorial!', side: 'left' } },
+        ];
+
+        const d = driver({
+            steps,
+            showProgress: true,
+            progressText: '{{current}} de {{total}}',
+            prevBtnText: 'Anterior',
+            nextBtnText: 'Siguiente',
+            doneBtnText: 'Finalizar',
+            overlayClick: false,
+            disableActiveInteraction: true, // ← bloquea clics en el elemento destacado (p. ej. Crear meta)
+        });
+        d.drive();
+    }, []);
 
     // ── Ordenación ──────────────────────────────────────────────
     const [sortKey, setSortKey] = useState(null);     // 'nombre' | 'fecha' | 'periodo' | null
@@ -121,6 +254,47 @@ export default function Dashboard() {
         []
     );
 
+    const ensureGoalDetail = useCallback(
+        async (goal) => {
+            if (goal.registros !== undefined) return;
+            try {
+                const { data } = await getGoalById(goal._id); // devuelve registros + resto de meta
+                upsertGoal(data);
+                syncSelected(data);
+            } catch (err) {
+                setError(apiError(err, "No se pudo cargar el detalle de la meta."));
+            }
+        },
+        [upsertGoal, syncSelected]
+    );
+
+
+    const startTutorialFlow = useCallback(() => {
+        openConfirm({
+            title: "Iniciar tutorial",
+            message:
+                "Se creará una meta de ejemplo para enseñarte los botones de cada fila.\n" +
+                "Podrás eliminarla cuando quieras. ¿Quieres empezar?",
+            confirmText: "Sí, empezar",
+            confirmClass: "btn-soft-success",
+            cancelText: "Cancelar",
+            cancelClass: "btn-soft-danger",
+            onConfirm: async () => {
+                try {
+                    const demo = await ensureTutorialGoal();
+                    // selecciona la meta y asegura detalle (registros) antes de arrancar el tour
+                    if (demo) {
+                        setSelectedGoal(demo);
+                        await ensureGoalDetail(demo);
+                    }
+                    setTimeout(() => runTourWithRow(), 150);
+                } catch { /* el error ya se muestra con setError */ }
+            },
+
+        });
+    }, [ensureTutorialGoal, runTourWithRow, ensureGoalDetail]);
+
+
     // Carga inicial
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -130,10 +304,15 @@ export default function Dashboard() {
             setStats(data.estadisticas || null);
         } catch (err) {
             setError(apiError(err, "No se pudieron cargar los datos."));
+            if (err?.response?.status === 404) {
+                navigate('/onboarding', { replace:true });
+                return;
+            }
+            setError(apiError(err, "No se pudieron cargar los datos."));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [navigate]);
 
     // inicial + cache de Profile para volver sin refetch
     useEffect(() => {
@@ -182,21 +361,6 @@ export default function Dashboard() {
             window.removeEventListener('resize', setVar);
         };
     }, []);
-
-    // Asegura traer REGISTROS (detalle) cuando haga falta
-    const ensureGoalDetail = useCallback(
-        async (goal) => {
-            if (goal.registros !== undefined) return;
-            try {
-                const { data } = await getGoalById(goal._id); // devuelve registros + resto de meta
-                upsertGoal(data);
-                syncSelected(data);
-            } catch (err) {
-                setError(apiError(err, "No se pudo cargar el detalle de la meta."));
-            }
-        },
-        [upsertGoal, syncSelected]
-    );
 
     const fmtDateOnly = (d) => {
         const date = Array.isArray(d) ? d[0] : d;
@@ -625,8 +789,8 @@ export default function Dashboard() {
     return (
         <div className="dashboard-wrapper">
             <header ref={headerRef} className="dashboard-header">
-                <h1 ref={titleRef} className="dashboard-title">
-                    <img src={appLogo} alt="" className="title-logo" aria-hidden="true" />
+                <h1 ref={titleRef} className="dashboard-title" id="tour-title">
+                <img src={appLogo} alt="" className="title-logo" aria-hidden="true" />
                     Mis metas
                 </h1>
 
@@ -637,6 +801,15 @@ export default function Dashboard() {
                 <div className="dashboard-header-right">
                     <button
                         className="avatar-btn"
+                        id="tour-help"
+                        onClick={startTutorialFlow}
+                        title="Abrir tutorial"
+                        aria-label="Abrir tutorial"
+                    >
+                        <img src={tutorialIcon} alt="Abrir tutorial" className="avatar-icon" />
+                    </button>
+                    <button
+                        className="avatar-btn" id="tour-profile"
                         onClick={() =>
                             navigate("/profile", {
                                 state: { dashboardCache: { goals, stats }, profileSnapshot },
@@ -654,19 +827,20 @@ export default function Dashboard() {
                 {/* ——— Buscador flotando bajo el header ——— */}
                 <div className="dash-search" role="search" aria-label="Buscar metas por nombre">
                     <input
-                        className="dash-search__input"
+                        className="dash-search__input" id="tour-search"
                         type="text"
                         value={search}
                         placeholder="Buscar metas por nombre…"
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <button
+                        id="tour-clear"
                         className="filter-clear dash-search__clear"
                         onClick={() => setSearch("")}
                         disabled={!search}
                         title="Limpiar búsqueda"
                     >
-                        Limpiar
+                    Limpiar
                     </button>
                 </div>
             </header>
@@ -674,7 +848,7 @@ export default function Dashboard() {
             <div className="board">
                 <div className="left-pane card">
                     <div className="goals-scroll">
-                        <div className="goals-table-wrapper">
+                        <div className="goals-table-wrapper" id="tour-table">
                             {goals.length === 0 && (
                                 <div className="goals-empty-overlay" role="status" aria-live="polite">
                                     <div className="goals-empty-card">
@@ -743,7 +917,7 @@ export default function Dashboard() {
 
                     {/* FAB dentro del panel izquierdo, flotando sobre la unión tabla/detalle */}
                     <button
-                        className="create-goal-btn create-goal-btn--float"
+                        className="create-goal-btn create-goal-btn--float" id="tour-create"
                         onClick={() => setOpenNew(true)}
                     >
                         Crear meta
@@ -757,7 +931,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="right-pane">
-                    <section className="user-stats card">
+                    <section className="user-stats card" id="tour-stats">
                         <h2 style={{ margin: "0 0 1rem 0" }}>Estadísticas</h2>
                         {stats ? (
                             <div className="stats-content">
@@ -836,7 +1010,7 @@ export default function Dashboard() {
                             ¿Quieres aprender a usar la aplicación? 🤔
                             {"\n"}
                             Abre el <strong>tutorial</strong>: lo encontrarás en la barra superior,
-                            a la izquierda del botón de perfil, identificado con el icono de interrogación (?).
+                            a la izquierda del botón de perfil, identificado con el icono <img src={tutorialIcon} alt="Tutorial" className="inline-icon" />.
                         </p>
                         <div className="modal-actions">
                             <button className="back-btn" onClick={() => setShowWelcome(false)}>

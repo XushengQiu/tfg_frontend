@@ -104,7 +104,7 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                     {/* Duración (misma línea) */}
                     <label style={ROW}>
                         <span>Duración:</span>
-                        <div style={{ ...INLINE, opacity: form.periodoIndef ? 0.55 : 1 }}>
+                        <div style={{ ...INLINE }}>
                             <input
                                 type="number"
                                 disabled={form.periodoIndef}
@@ -114,13 +114,13 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
                                 min="1"
                                 max="10000"
                                 step="1"
-                                style={{ ...INPUT, width: 110 }}
+                                style={{ ...INPUT, width: 110, height: 36, opacity: form.periodoIndef ? 0.55 : 1 }}
                             />
                             <select
                                 disabled={form.periodoIndef}
                                 value={form.periodoUnit}
                                 onChange={(e) => setForm({ ...form, periodoUnit: e.target.value })}
-                                style={INPUT}
+                                style={{ ...INPUT, height: 36, opacity: form.periodoIndef ? 0.55 : 1 }}
                             >
                                 <option value="dias">Días</option>
                                 <option value="semanas">Semanas</option>

@@ -36,6 +36,7 @@ export default function GoalRow({
                 <div className="goal-actions">
                     {!goal.finalizado && (
                         <button
+                            id={`tour-row-entry-${goal._id}`}
                             className="btn btn--primary btn--sm"
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -64,6 +65,7 @@ export default function GoalRow({
                     ) : (
                         <>
                             <button
+                                id={`tour-row-finalize-${goal._id}`}
                                 className="btn btn--warn btn--sm"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -73,6 +75,7 @@ export default function GoalRow({
                                 Finalizar
                             </button>
                             <button
+                                id={`tour-row-edit-${goal._id}`}
                                 className="btn btn--muted btn--sm"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -82,13 +85,14 @@ export default function GoalRow({
                                 Editar
                             </button>
                             <button
+                                id={`tour-row-delete-${goal._id}`}
                                 className="btn btn--danger btn--sm"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onDelete(goal._id);
                                 }}
                             >
-                                Eliminar
+                            Eliminar
                             </button>
                         </>
                     )}

@@ -1,9 +1,11 @@
 import {
     onAuthStateChanged,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut,
     deleteUser,
-    getAdditionalUserInfo,
+    reauthenticateWithPopup,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
 } from 'firebase/auth';
@@ -15,7 +17,7 @@ import {
     useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProfile, deleteAccount as deleteAccountAPI } from './services/api';
+import { getProfile } from './services/api';
 
 const AuthCtx = createContext();
 export const useAuth = () => useContext(AuthCtx);
@@ -42,8 +44,11 @@ export function AuthProvider({ children }) {
             try {
                 const { data } = await getProfile();
                 setProfile(data);
-            } catch {
+            } catch (err) {
                 setProfile(null);                    // 404 si aún no existe en tu BD
+                if (window.location.pathname !== '/onboarding') {
+                    navigate('/onboarding', { replace:true });
+                }
             }
             setLoading(false);
         });
@@ -52,12 +57,37 @@ export function AuthProvider({ children }) {
 
     /** Google sign-in */
     const login = async () => {
-        const res   = await signInWithPopup(auth, googleProvider);
-        const isNew = getAdditionalUserInfo(res).isNewUser;
-
-        if (isNew) navigate('/onboarding', { replace:true });
-        else       navigate('/dashboard',  { replace:true });
+        try {
+            await signInWithPopup(auth, googleProvider);
+        } catch (err) {
+            const code = err?.code || '';
+            if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            }
+            alert(err?.message || 'No se pudo iniciar sesión con Google.');
+            return;
+        }
+        try {
+            await getProfile();
+            navigate('/dashboard', { replace: true });
+        } catch {
+            navigate('/onboarding', { replace: true });
+        }
     };
+
+    useEffect(() => {
+        (async () => {
+            const res = await getRedirectResult(auth);
+            if (!res) return;
+            try {
+                await getProfile();
+                navigate('/dashboard', { replace: true });
+            } catch {
+                navigate('/onboarding', { replace: true });
+            }
+        })();
+    }, [navigate]);
 
     /** Email/password: iniciar sesión */
     const loginEmail = async (email, password) => {
@@ -79,16 +109,34 @@ export function AuthProvider({ children }) {
     };
 
     /** logout */
-    const logout = () => signOut(auth);
+    const logout = async () => {
+        await signOut(auth);
+        setProfile(null);
+        navigate('/login', { replace: true });
+    };
 
     /** borrar cuenta: API → Auth */
     const deleteAccount = async () => {
-        // 1) elimina en tu backend
-        await deleteAccountAPI();
-        // 2) elimina en Firebase Auth
-        await deleteUser(auth.currentUser);
-        // onAuthStateChanged se encargará de redirigir a /login
-    };
+        const u = auth.currentUser;
+        try {
+            if (u) {
+                try {
+                    await deleteUser(u);
+                } catch (err) {
+                    if (err?.code === 'auth/requires-recent-login') {
+                        await reauthenticateWithPopup(u, googleProvider);
+                        await deleteUser(auth.currentUser);
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+        } finally {
+            await signOut(auth).catch(() => {});
+            setProfile(null);
+            navigate('/login', { replace: true });
+        }
+    }
 
     if (loading) return null;
 

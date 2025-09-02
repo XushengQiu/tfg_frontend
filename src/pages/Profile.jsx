@@ -10,6 +10,11 @@ import TermsContent from "../components/TermsContent";
 import DataPolicyContent from "../components/DataPolicyContent";
 import "../index.css";
 import appLogo from "../assets/icons/logo.svg";
+import { useCallback } from "react";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
+import tutorialIcon from "../assets/icons/tutorial.png";
+
 
 const apiError = (err, fallback) => {
     const res = err?.response;
@@ -32,7 +37,7 @@ const apiError = (err, fallback) => {
 };
 
 export default function Profile() {
-    const { user, logout, profile: ctxProfile } = useAuth();
+    const { user, logout, profile: ctxProfile, deleteAccount } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -118,31 +123,126 @@ export default function Profile() {
     const handleDelete = async () => {
         try {
             await deleteAPI();
-            navigate("/login", { replace: true });
+            await deleteAccount();
         } catch (err) {
             setError(apiError(err, "No se pudo eliminar la cuenta."));
             setConfirm(false);
         }
-    };
+    }
+
+    const startProfileTour = useCallback(() => {
+        const steps = [
+            // 1) Tarjeta con datos
+            {
+                element: '#tour-card',
+                popover: {
+                    title: 'Tus datos',
+                    description: 'Aquí puedes ver tu nombre, apellidos y correo asociados a tu cuenta.',
+                    side: 'bottom',
+                },
+            },
+            // 2) Cerrar sesión
+            {
+                element: '.logout-btn',
+                popover: {
+                    title: 'Cerrar sesión',
+                    description: 'Pulsa aquí para salir de tu cuenta en este dispositivo.',
+                    side: 'top',
+                },
+            },
+            // 3) Editar datos
+            {
+                element: '.edit-btn',
+                popover: {
+                    title: 'Editar datos',
+                    description: 'Actualiza tu nombre (mínimo 2 caracteres) y apellidos (puede quedar vacío). Límite de 50 caracteres.',
+                    side: 'top',
+                },
+            },
+            // 4) Eliminar cuenta
+            {
+                element: '.delete-btn',
+                popover: {
+                    title: 'Eliminar cuenta',
+                    description: 'Borra todos tus datos para siempre. Tendrás 10 segundos de seguridad antes de confirmar.',
+                    side: 'top',
+                },
+            },
+            // 5) Términos y condiciones
+            {
+                element: '#tour-terms',
+                popover: {
+                    title: 'Términos y condiciones',
+                    description: 'Consulta aquí los términos del servicio cuando lo necesites.',
+                    side: 'left',
+                },
+            },
+            // 6) Tratamiento de datos
+            {
+                element: '#tour-data',
+                popover: {
+                    title: 'Tratamiento de datos',
+                    description: 'Lee cómo tratamos tus datos personales y tu privacidad.',
+                    side: 'left',
+                },
+            },
+            // 7) Volver al dashboard
+            {
+                element: '#tour-back',
+                popover: {
+                    title: 'Volver',
+                    description: 'Regresa al dashboard con todas tus metas.',
+                    side: 'left',
+                },
+            },
+        ];
+
+        const d = driver({
+            steps,
+            showProgress: true,
+            progressText: '{{current}} de {{total}}',
+            prevBtnText: 'Anterior',
+            nextBtnText: 'Siguiente',
+            doneBtnText: 'Finalizar',
+            overlayClick: false,
+            disableActiveInteraction: true, // evita que se pulsen botones durante el paso
+        });
+
+        d.drive();
+    }, []);
 
     return (
         <div className="profile-wrapper">
             <header className="profile-header">
                 <h2>Mis datos</h2>
-                <button
-                    className="back-btn"
-                    onClick={() =>
-                        navigate("/dashboard", {
-                            state: { dashboardCache: location.state?.dashboardCache ?? null },
-                        })
-                    }
-                >
-                    Volver
-                </button>
+                <div className="profile-actions">
+                    <button
+                        className="avatar-btn"
+                        id="tour-help"
+                        onClick={startProfileTour}
+                        title="Abrir tutorial"
+                        aria-label="Abrir tutorial"
+                    >
+                        <img src={tutorialIcon} alt="Abrir tutorial" className="avatar-icon" />
+                    </button>
+
+                    <button
+                        id="tour-back"
+                        className="back-btn"
+                        onClick={() =>
+                            navigate("/dashboard", {
+                                state: { dashboardCache: location.state?.dashboardCache ?? null },
+                            })
+                        }
+                    >
+                        Volver
+                    </button>
+                </div>
+
             </header>
 
-            <main className="profile-card">
-                <p>
+            <main className="profile-card" id="tour-card">
+            <p>
                     <strong>Nombre:</strong> {profile?.nombre}
                 </p>
                 <p>
@@ -167,10 +267,10 @@ export default function Profile() {
 
             {/* Accesos legales */}
             <div className="legal-fabs" aria-label="Accesos legales">
-                <button type="button" className="legal-fab" onClick={() => setLegalOpen("terms")}>
+                <button id="tour-terms" type="button" className="legal-fab" onClick={() => setLegalOpen("terms")}>
                     Términos y condiciones
                 </button>
-                <button type="button" className="legal-fab" onClick={() => setLegalOpen("data")}>
+                <button id="tour-data" type="button" className="legal-fab" onClick={() => setLegalOpen("data")}>
                     Tratamiento de datos
                 </button>
             </div>
@@ -299,7 +399,16 @@ export default function Profile() {
                 </Modal>
             )}
 
-            {error ? <p role="alert" style={{ color: "#c4374c" }}>{error}</p> : null}
+            {error && (
+                <div className="toast show toast--error" role="alert" aria-live="assertive">
+                    <div className="toast-icon">⚠️</div>
+                    <div className="toast-body">
+                        <div className="toast-title">Error</div>
+                        <div className="toast-text">{error}</div>
+                    </div>
+                    <button className="toast-close" aria-label="Cerrar" onClick={() => setError("")}>×</button>
+                </div>
+            )}
         </div>
     );
 }
