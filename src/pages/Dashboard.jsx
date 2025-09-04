@@ -184,7 +184,7 @@ export default function Dashboard() {
 
             // NUEVO: Insight (calendario para Check, gráfico para Num)
             { element: '#tour-insight',
-                popover: { title: 'Calendario / Gráfico', description: 'Las metas de objetivo Check muestran un calendario navegable por meses. Las metas de objeetivo numeral muestran un gráfico con filtros (periodo, rango manual y primeros/últimos registros).', side: 'left' } },
+                popover: { title: 'Calendario / Gráfico', description: 'Las metas de objetivo Check muestran un calendario navegable por meses. Las metas de objetivo numeral muestran un gráfico con filtros (periodo, rango manual y primeros/últimos registros).', side: 'left' } },
 
             { element: '#tour-stats',
                 popover: { title: 'Estadísticas', description: 'Resumen rápido de tu actividad y progreso.', side: 'left' } },

@@ -1,7 +1,7 @@
 // ───────────────────────────────────────────────────────────────
 // src/pages/Login.jsx
 // ───────────────────────────────────────────────────────────────
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     getAuth,
     signInWithEmailAndPassword,
@@ -19,6 +19,7 @@ import DataPolicyContent from '../components/DataPolicyContent';
 // assets
 import googleLogo from '../assets/icons/google_logo.png';
 import libraryBG from '../assets/media/library_1536x1760.png';
+import infoIcon from '../assets/icons/informacion.png';
 
 // Iconos inline (sin dependencias)
 const EyeOpenIcon = (props) => (
@@ -49,6 +50,8 @@ export default function Login() {
 
     // mostrar/ocultar contraseña
     const [showPwd, setShowPwd] = useState(false);
+    const pwdInfoRef = useRef(null);
+    const [showPwdInfo, setShowPwdInfo] = useState(false);
 
     // reset password
     const [resetEmail, setResetEmail] = useState('');
@@ -56,11 +59,21 @@ export default function Login() {
     const [resetSent, setResetSent] = useState(false);
 
     const [toast, setToast] = useState(null); // { title, text } | null
+
     useEffect(() => {
         if (!toast) return;
         const id = setTimeout(() => setToast(null), 5000);
         return () => clearTimeout(id);
     }, [toast]);
+
+    useEffect(() => {
+        const onDocClick = (ev) => {
+            if (!pwdInfoRef.current) return;
+            if (!pwdInfoRef.current.contains(ev.target)) setShowPwdInfo(false);
+        };
+        document.addEventListener('mousedown', onDocClick);
+        return () => document.removeEventListener('mousedown', onDocClick);
+    }, []);
 
     // ── Login con email ──────────────────────────────────────────
     const doEmailLogin = async (e) => {
@@ -98,10 +111,10 @@ export default function Login() {
     const doRegister = async (e) => {
         e?.preventDefault();
         if (!email || !password) return;
-        if (password.length < 6) {
+        if (password.length < 12) {
             setToast({
                 title: 'Registro de cuenta',
-                text: 'La contraseña debe tener al menos 6 caracteres (requisito de Firebase).',
+                text: 'Por seguridad, la contraseña debe tener al menos 12 caracteres.',
             });
             return;
         }
@@ -212,6 +225,36 @@ export default function Login() {
             background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, lineHeight: 1,
         },
 
+        pwdRow: { position: 'relative', width: '100%' },
+        infoArea: {
+            position: 'absolute',
+            right: -28,
+            top: '50%',
+            transform: 'translateY(-45%)',
+            display: 'flex',
+            alignItems: 'center'
+        },
+
+        infoBtnOut: {
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            padding: 4, lineHeight: 1
+        },
+        infoIcon: { width: 16, height: 16, display: 'block', opacity: .95, position: 'relative', top: 2 },
+        infoPopoverOut: {
+            position: 'absolute',
+            right: -180,
+            bottom: 'calc(100% + 6px)',
+            zIndex: 10,
+            width: 'min(92vw, 280px)',
+            background: '#fff',
+            border: '1px solid #e0e0e0',
+            borderRadius: 8,
+            boxShadow: '0 8px 18px rgba(0,0,0,.10)',
+            padding: '.55rem .7rem',
+            fontSize: '.88rem',
+            lineHeight: 1.3
+        },
+
         rowBtns: { display: 'flex', gap: '.6rem', justifyContent: 'space-between', marginTop: '.3rem' },
         btn: {
             flex: 1, padding: '.6rem 1rem', borderRadius: 12, cursor: 'pointer',
@@ -276,16 +319,16 @@ export default function Login() {
                             </div>
                         </label>
 
-                        <label style={S.label}>
-                            Contraseña
+                        <label style={S.label}>Contraseña</label>
+                        <div style={S.pwdRow}>
                             <div style={S.inputWrap}>
                                 <input
                                     type={showPwd ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    minLength={6}
-                                    style={{ ...S.input, paddingRight: '2.2rem' }} // deja espacio al icono
+                                    /* RECOMENDADO: sin minLength aquí, ver nota al final */
+                                    style={{ ...S.input, paddingRight: '2.2rem' }}  // solo deja hueco al “ojo”
                                     onFocus={(e) => Object.assign(e.target.style, S.inputFocus)}
                                     onBlur={(e) => {
                                         e.target.style.boxShadow = '';
@@ -302,7 +345,38 @@ export default function Login() {
                                     {showPwd ? <EyeOpenIcon /> : <EyeOffIcon />}
                                 </button>
                             </div>
-                        </label>
+
+                            {/* Icono + popover FUERA del campo, a la derecha */}
+                            <div ref={pwdInfoRef} style={S.infoArea}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPwdInfo(v => !v)}
+                                    style={S.infoBtnOut}
+                                    aria-label="Requisitos de contraseña"
+                                    title="Requisitos de contraseña"
+                                >
+                                    <img src={infoIcon} alt="" style={S.infoIcon} />
+                                </button>
+
+                                {showPwdInfo && (
+                                    <div style={S.infoPopoverOut} role="status" aria-live="polite">
+                                        <strong style={{ display: 'block', marginBottom: '.2rem', fontSize: '.9rem' }}>
+                                            Requisitos de contraseña
+                                        </strong>
+                                        <ul style={{ margin: 0, paddingLeft: '1rem', color: '#444', fontSize: '.86rem' }}>
+                                        <li>Mínimo <strong>12</strong> caracteres.</li>
+                                            <li>Al menos <strong>una mayúscula</strong> (A–Z).</li>
+                                            <li>Al menos <strong>una minúscula</strong> (a–z).</li>
+                                            <li>Al menos <strong>un número</strong> (0–9).</li>
+                                            <li>Al menos <strong>un carácter especial</strong> (p. ej. ! @ # $ % & * ?).</li>
+                                        </ul>
+                                        <div style={{ marginTop: '.35rem', fontSize: '.82rem', color: '#666' }}>
+                                            Consejo: usa una frase fácil de recordar y añade símbolos y números.
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Olvidé mi contraseña */}
                         <div style={S.reset}>
