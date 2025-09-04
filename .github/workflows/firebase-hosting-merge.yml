@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -30,11 +29,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
-      - name: Firebase live deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Create .env.production from GitHub Secrets
+        shell: bash
+        run: |
+          cat > .env.production <<'EOF'
+          REACT_APP_FB_API_KEY=${{ secrets.REACT_APP_FB_API_KEY }}
+          REACT_APP_FB_AUTH_DOMAIN=${{ secrets.REACT_APP_FB_AUTH_DOMAIN }}
+          REACT_APP_FB_PROJECT_ID=${{ secrets.REACT_APP_FB_PROJECT_ID }}
+          REACT_APP_FB_STORAGE_BUCKET=${{ secrets.REACT_APP_FB_STORAGE_BUCKET }}
+          REACT_APP_FB_MESSAGING_SENDER_ID=${{ secrets.REACT_APP_FB_MESSAGING_SENDER_ID }}
+          REACT_APP_FB_APP_ID=${{ secrets.REACT_APP_FB_APP_ID }}
+          REACT_APP_FB_MEASUREMENT_ID=${{ secrets.REACT_APP_FB_MEASUREMENT_ID }}
+          REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}
+          EOF
+
+      - run: npm ci
+      - run: npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLIFE_DEPLOYMENT }}
           channelId: live
+          projectId: golife-deployment
