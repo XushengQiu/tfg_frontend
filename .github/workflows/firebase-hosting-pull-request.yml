@@ -29,11 +29,14 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        env:
-          CI: 'true'
-        run: npm run test:ci
+        shell: bash
+        run: |
+          if grep -q '"test:ci"' package.json; then
+            npm run test:ci
+          else
+            npx vitest run --coverage
+          fi
 
-      # Sólo si los tests pasan, hago preview
       - name: Firebase preview channel
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
