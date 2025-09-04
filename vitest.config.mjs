@@ -1,4 +1,4 @@
-// vitest.config.mjs (raíz del repo)
+// vitest.config.mjs
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
