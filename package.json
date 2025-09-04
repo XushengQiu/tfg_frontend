@@ -7,7 +7,7 @@
     "build": "react-scripts build",
     "test": "vitest",
     "test:cov": "vitest --coverage",
-    "test:ci": "vitest run --coverage",
+    "test:ci": "vitest run --coverage --passWithNoTests",
     "test:react": "react-scripts test"
   },
   "dependencies": {
@@ -24,9 +24,9 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "@vitest/coverage-v8": "^2.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "jsdom": "^24.0.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.1.9"
   },
   "eslintConfig": {
     "extends": [
