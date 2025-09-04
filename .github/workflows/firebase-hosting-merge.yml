@@ -27,7 +27,7 @@ jobs:
 
       - name: Install
         run: npm ci
-        # working-directory: ./ (ajústalo si tu package.json está en una subcarpeta)
+        working-directory: ./ (ajústalo si tu package.json está en una subcarpeta)
 
       - name: Run tests
         shell: bash
@@ -37,7 +37,7 @@ jobs:
           else
             npx vitest run --coverage
           fi
-        # working-directory: ./ (ajústalo si hace falta)
+        working-directory: ./ (ajústalo si hace falta)
 
       - name: Firebase deploy (live)
         uses: FirebaseExtended/action-hosting-deploy@v0
