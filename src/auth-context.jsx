@@ -45,16 +45,21 @@ export function AuthProvider({ children }) {
                 const { data } = await getProfile();
                 setProfile(data);
             } catch (err) {
-                setProfile(null); // 404 si aún no existe en tu BD
+                const status = err?.response?.status;
+                const path   = window.location.pathname;
+                setProfile(null);
 
-                const path = window.location.pathname;
-                if (path === '/login' || path === '/onboarding') {
-                    // Estás logueando o ya en onboarding → no cierres sesión ni redirijas.
-                    // Login/Onboarding decidirán el siguiente paso (crear perfil).
-                } else {
-                    // Usuario con sesión Firebase pero sin perfil y en otra ruta: vuelve a Login.
+                if (status === 404) {
+                    // Usuario logueado pero sin perfil en tu API → Onboarding (SIN cerrar sesión)
+                    if (path !== '/login' && path !== '/onboarding') {
+                    navigate('/onboarding', { replace: true });
+                    }
+                } else if (status === 401 || status === 403) {
+                    // Token inválido / sin permisos → cerrar sesión y a Login
                     try { await signOut(auth); } catch {}
-                    navigate('/login', { replace: true, state: { reason: 'need_onboarding' } });
+                    navigate('/login', { replace: true });
+                } else {
+                    // 429 o 5xx o fallo de red → error transitorio, NO muevo al usuario ni cierro sesión
                 }
             }
             setLoading(false);

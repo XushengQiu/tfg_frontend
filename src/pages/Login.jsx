@@ -111,6 +111,8 @@ export default function Login() {
     const doRegister = async (e) => {
         e?.preventDefault();
         if (!email || !password) return;
+
+        // 1) Largo mínimo
         if (password.length < 12) {
             setToast({
                 title: 'Registro de cuenta',
@@ -118,15 +120,37 @@ export default function Login() {
             });
             return;
         }
+
+        // 2) Requisitos de complejidad (solo si ya mide 12+)
+        const missing = [];
+        if (!/[A-Z]/.test(password)) missing.push('una mayúscula');
+        if (!/[a-z]/.test(password)) missing.push('una minúscula');
+        if (!/[0-9]/.test(password)) missing.push('un número');
+        if (!/[^A-Za-z0-9]/.test(password)) missing.push('un carácter especial');
+
+        if (missing.length) {
+            const list = missing.map((m) => `al menos ${m}`).join(', ');
+            setToast({
+                title: 'Registro de cuenta',
+                text: `Por seguridad, la contraseña debe tener: ${list}.`,
+            });
+            return;
+        }
+
         setBusy(true);
         try {
             await createUserWithEmailAndPassword(getAuth(), email.trim(), password);
             navigate('/onboarding', { replace: true });
         } catch (err) {
-            setToast({
-                title: 'Registro de cuenta',
-                text: err?.message || 'No se pudo crear la cuenta.',
-            });
+            // Mensajes amistosos para códigos comunes
+            const code = err?.code || '';
+            let text = err?.message || 'No se pudo crear la cuenta.';
+            if (code === 'auth/email-already-in-use') text = 'Ese correo ya está registrado.';
+            else if (code === 'auth/invalid-email') text = 'El correo no es válido.';
+            else if (code === 'auth/operation-not-allowed') text = 'El registro por contraseña no está habilitado.';
+            else if (code === 'auth/weak-password') text = 'Tu contraseña no cumple la política. Revisa los requisitos.';
+
+            setToast({ title: 'Registro de cuenta', text });
         } finally {
             setBusy(false);
         }
