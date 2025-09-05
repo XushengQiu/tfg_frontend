@@ -87,7 +87,7 @@ describe('Login – registro', () => {
         if (!email || !pwd) throw new Error('No se encontraron los inputs de correo/contraseña en el formulario de registro');
 
         fireEvent.change(email, { target: { value: 'ana@x.com' } });
-        fireEvent.change(pwd,   { target: { value: '123456789012' } });
+        fireEvent.change(pwd,   { target: { value: 'Abcdefghij1@' } });
         fireEvent.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
         await waitFor(() => expect(createUserWithEmailAndPassword).toHaveBeenCalled());
