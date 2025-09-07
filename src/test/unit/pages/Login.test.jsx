@@ -88,6 +88,6 @@ describe('Login', () => {
         render(<Login />);
         const googleBtn = await screen.findByRole('button', { name: /google/i });
         fireEvent.click(googleBtn);
-        expect(loginSpy).toHaveBeenCalled();
+        await waitFor(() => expect(loginSpy).toHaveBeenCalled());
     });
 });

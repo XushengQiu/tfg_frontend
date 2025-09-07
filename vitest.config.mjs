@@ -38,9 +38,6 @@ export default defineConfig({
                 'src/pages/Home.js',          // estática (0% functions)
                 'src/services/api.js',        // wrapper http (aquí no lo testeamos)
                 'src/utils/format.js',        // hasta que metas unit tests propios
-                // Visualización pesada: la testaremos en otra fase
-                'src/components/GoalInsight.jsx',
-                'src/components/GoalDetail.jsx',
             ],
             thresholds: {
                 global: { branches: 70, functions: 80, lines: 80, statements: 80 },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, beforeEach } from 'vitest';
 
@@ -61,7 +61,9 @@ test('login con email → dashboard si hay perfil', async () => {
     const pwd = container.querySelector('input[type="password"]');
     if (!pwd) throw new Error('password input not found');
     await userEvent.type(pwd, 'supersecretpass');
-    await userEvent.click(screen.getByRole('button', { name: /login/i }));
+    await act(async () => {
+        await userEvent.click(screen.getByRole('button', { name: /login/i }));
+    });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true }));
 });
 
@@ -73,7 +75,9 @@ test('login con email → onboarding si NO hay perfil', async () => {
     const pwd = container.querySelector('input[type="password"]');
     if (!pwd) throw new Error('password input not found');
     await userEvent.type(pwd, 'supersecretpass');
-    await userEvent.click(screen.getByRole('button', { name: /login/i }));
+    await act(async () => {
+        await userEvent.click(screen.getByRole('button', { name: /login/i }));
+    });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/onboarding', { replace: true }));
 });
 
@@ -97,7 +101,9 @@ test('reset password: abre modal, valida vacío y éxito', async () => {
     const modal = container.querySelector('.modal');
     const emailInModal = within(modal).getByLabelText(/correo electrónico/i);
     await userEvent.type(emailInModal, 'x@y.com');
-    await userEvent.click(screen.getByRole('button', { name: /enviar enlace/i }));
+    await act(async () => {
+        await userEvent.click(screen.getByRole('button', { name: /enviar enlace/i }));
+    });
     expect(await screen.findByText(/si existe una cuenta asociada/i)).toBeInTheDocument();
 });
 

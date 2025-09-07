@@ -61,8 +61,7 @@ describe('ServiceBanner', () => {
         expect(screen.getByText(/Volveremos a intentarlo/i)).toBeInTheDocument();
     });
 
-    test('botón "Reintentar ahora" llama a window.location.reload', () => {
-        // mock seguro de reload en jsdom
+    test('botón "Reintentar ahora" llama a window.location.reload', async () => {
         const original = window.location;
         Object.defineProperty(window, 'location', {
             configurable: true,
@@ -70,9 +69,10 @@ describe('ServiceBanner', () => {
         });
 
         render(<ServiceBanner />);
-        act(() => {
+
+        await act(async () => {
             window.dispatchEvent(new CustomEvent('net:degraded', {
-                detail: { status: 'network', retryIn: 1000 }
+                detail: { status: 'network', retryIn: null } // ← sin timers
             }));
         });
 
@@ -81,6 +81,7 @@ describe('ServiceBanner', () => {
 
         Object.defineProperty(window, 'location', { configurable: true, value: original });
     });
+
 
     test('al desmontar, no deja contadores activos ni reaparece', () => {
         const { unmount, queryByRole } = render(<ServiceBanner />);
