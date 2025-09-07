@@ -47,6 +47,7 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [busy, setBusy] = useState(false);
+    const [phase, setPhase] = useState(null); // 'auth' | 'profile' | 'google' | 'register' | null
 
     // mostrar/ocultar contraseña
     const [showPwd, setShowPwd] = useState(false);
@@ -59,14 +60,24 @@ export default function Login() {
     const [resetSent, setResetSent] = useState(false);
 
     const [toast, setToast] = useState(null); // { title, text } | null
+    const [gPopupMsg, setGPopupMsg] = useState('');
+
+    useEffect(() => {
+        const warm = async () => {
+            try { await fetch('/api/salud', { method:'HEAD', cache:'no-store' }); } catch {}
+        };
+        warm();
+    }, []);
 
     useEffect(() => {
         if (!toast) return;
+        if (process.env.NODE_ENV === 'test') return;
         const id = setTimeout(() => setToast(null), 5000);
         return () => clearTimeout(id);
     }, [toast]);
 
     useEffect(() => {
+        if (process.env.NODE_ENV === 'test') return;
         const onDocClick = (ev) => {
             if (!pwdInfoRef.current) return;
             if (!pwdInfoRef.current.contains(ev.target)) setShowPwdInfo(false);
@@ -80,9 +91,11 @@ export default function Login() {
         e?.preventDefault();
         if (!email || !password) return;
         setBusy(true);
+        setPhase('auth');
         try {
             await signInWithEmailAndPassword(getAuth(), email.trim(), password);
             try {
+                setPhase('profile');
                 await getProfile();
                 navigate('/dashboard', { replace: true });
             } catch {
@@ -104,6 +117,7 @@ export default function Login() {
             }
         } finally {
             setBusy(false);
+            setPhase(null);
         }
     };
 
@@ -138,6 +152,7 @@ export default function Login() {
         }
 
         setBusy(true);
+        setPhase('register');
         try {
             await createUserWithEmailAndPassword(getAuth(), email.trim(), password);
             navigate('/onboarding', { replace: true });
@@ -153,8 +168,37 @@ export default function Login() {
             setToast({ title: 'Registro de cuenta', text });
         } finally {
             setBusy(false);
+            setPhase(null);
         }
     };
+
+    // Login con Google con overlay también
+    const doGoogleLogin = async () => {
+        setBusy(true);
+        setPhase('google');
+        try {
+            // importante: loginWithGoogle debe devolver la promesa de signIn (sin alert internos)
+            await loginWithGoogle();
+            // el flujo de onAuthStateChanged se encargará de navegar
+        } catch (err) {
+            const code = err?.code;
+            if (code === 'auth/popup-closed-by-user') {
+                setGPopupMsg('Cerraste la ventana de Google antes de completar el inicio de sesión.');
+                setOpenModal('gpopup');
+            } else if (code === 'auth/cancelled-popup-request') {
+                setGPopupMsg('Se canceló la ventana anterior de Google. Vuelve a intentarlo.');
+                setOpenModal('gpopup');
+            } else {
+                const text = err?.message || 'No se pudo iniciar sesión.';
+                setToast({title: 'Inicio con Google', text});
+            }
+        } finally {
+            // Pase lo que pase, no dejes el overlay colgado
+            setBusy(false);
+            setPhase(null);
+        }
+    };
+
 
     // ── Reset password ───────────────────────────────────────────
     const openReset = () => {
@@ -314,7 +358,7 @@ export default function Login() {
                 <div style={S.card}>
                     {/* Google */}
                     <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0rem' }}>
-                        <button type="button" onClick={loginWithGoogle} style={S.gBtn} title="Iniciar sesión con Google">
+                        <button type="button" onClick={doGoogleLogin} style={S.gBtn} title="Iniciar sesión con Google" disabled={busy} aria-disabled={busy}>
                             <img src={googleLogo} alt="" style={S.gIcon} aria-hidden="true" />
                             <span>Iniciar sesión con Google</span>
                         </button>
@@ -470,6 +514,26 @@ export default function Login() {
                 <DataPolicyContent />
             </Modal>
 
+            {/* Modal Google cancelado */}
+            <Modal
+                open={openModal === 'gpopup'}
+                title="Inicio con Google"
+                onClose={() => setOpenModal(null)}
+                showDenyButton={false}
+                showCloseIcon={true}
+            >
+                <p style={{ marginTop: 0 }}>{gPopupMsg || 'La ventana emergente de Google se cerró.'}</p>
+                <ul style={{ marginTop: '.25rem', paddingLeft: '1rem', color: '#555', fontSize: '.95rem' }}>
+                    <li>Vuelve a pulsar <strong>“Iniciar sesión con Google”</strong>.</li>
+                    <li>Si no aparece la ventana, revisa que el navegador no esté bloqueando <strong>pop-ups</strong>.</li>
+                </ul>
+                <div className="modal-actions">
+                    <button className="back-btn" type="button" onClick={() => setOpenModal(null)}>
+                        Entendido
+                    </button>
+                </div>
+            </Modal>
+
             {/* Modal de reset */}
             <Modal
                 open={openModal === 'reset'}
@@ -546,6 +610,31 @@ export default function Login() {
                     </button>
                 </div>
             )}
+            {/* Overlay de bloqueo durante login/registro y wake-up del backend */}
+            {busy && <LoginBlocker phase={phase} />}
         </main>
+    );
+}
+
+// ───────────────────────────────
+// Overlay reutilizable
+// ───────────────────────────────
+function LoginBlocker({ phase }) {
+    const map = {
+        auth: { title: 'Iniciando sesión…', desc: 'Validando credenciales.' },
+        profile: { title: 'Preparando tu espacio…', desc: 'Estamos despertando el servidor. Puede tardar un poco la primera vez.' },
+        google: { title: 'Conectando con Google…', desc: 'Un momento por favor.' },
+        register: { title: 'Creando tu cuenta…', desc: 'Configurando todo para ti.' }
+    };
+    const { title, desc } = map[phase] || { title: 'Procesando…', desc: 'Un momento por favor.' };
+    return (
+        <div className="login-blocker" role="alert" aria-live="assertive" aria-busy="true">
+            <div className="login-blocker__card">
+                <div className="login-blocker__spinner" aria-hidden="true" />
+                <div className="login-blocker__title">{title}</div>
+                <div className="login-blocker__desc">{desc}</div>
+                <div className="login-blocker__hint">No vuelvas a pulsar. La operación sigue en curso.</div>
+            </div>
+        </div>
     );
 }

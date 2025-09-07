@@ -20,6 +20,50 @@ api.interceptors.request.use(async (cfg) => {
     return cfg;
 });
 
+/* estado de red + reintentos seguros (GET/HEAD) */
+const emit = (name, detail) => {
+    try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch {}
+};
+
+const RETRY_STATUSES = new Set([429, 503, 504]);
+const MAX_RETRIES = 3;
+
+api.interceptors.response.use(
+    (res) => {
+        emit('net:ok', {});
+        return res;
+    },
+    async (err) => {
+        const cfg = err?.config || {};
+        const status = err?.response?.status;
+        const method = (cfg.method || 'get').toLowerCase();
+
+        const isNetwork = !err?.response;               // fallo de red / timeout
+        const retryableStatus = status && RETRY_STATUSES.has(status);
+        const retryableMethod = method === 'get' || method === 'head';
+
+        if (retryableMethod && (retryableStatus || isNetwork)) {
+            cfg.__retryCount = (cfg.__retryCount || 0) + 1;
+            if (cfg.__retryCount <= MAX_RETRIES) {
+                const base = 350 * Math.pow(2, cfg.__retryCount - 1);
+                const jitter = Math.random() * 250;
+                const delay = Math.round(base + jitter);
+
+                emit('net:degraded', { status: status || 'network', retryIn: delay, attempt: cfg.__retryCount });
+
+                await new Promise((r) => setTimeout(r, delay));
+                return api.request(cfg); // reintento
+            }
+        }
+
+        // sin más reintentos → informar estado degradado
+        if (retryableStatus || isNetwork) {
+            emit('net:degraded', { status: status || 'network', retryIn: null, attempt: cfg.__retryCount || 0 });
+        }
+        return Promise.reject(err);
+    }
+);
+
 /* ────────── ENDPOINTS ────────── */
 /* usuario ------------------------------------------------------*/
 export const getUserData    = ()      => api.get   ("/api/usuarios");

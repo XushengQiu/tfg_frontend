@@ -806,3 +806,48 @@ code{ font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace;
   right:12px;
 }
 .modal-help .avatar-icon{ width:24px; height:24px; }
+
+/* ——— Login: overlay de bloqueo durante wake-up/auth ——— */
+.login-blocker{
+  position: fixed; inset: 0;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; /* por encima de modales (999) */
+}
+.login-blocker__card{
+  width: min(92vw, 420px);
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.12);
+  padding: 1.1rem 1.2rem 1rem;
+  text-align: center;
+}
+.login-blocker__spinner{
+  width: 36px; height: 36px; margin: 0 auto .6rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.login-blocker__title{ font-weight: 700; font-size: 1.05rem; }
+.login-blocker__desc{ color:#444; margin-top:.25rem; }
+.login-blocker__hint{ color:#666; font-size:.86rem; margin-top:.5rem; }
+
+/* Banner global de estado de red / servicio */
+.net-banner{
+  position: fixed; left: 0; right: 0; top: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 14px;
+  background: var(--accent); color: #fff; z-index: 1000;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+.net-banner__content{ display:flex; flex-direction:column; gap:2px; }
+.net-banner__sub{ opacity:.9; font-size:.92rem; }
+.net-banner__btn{
+  background:#fff; color:#111; border:1px solid #eee; cursor:pointer;
+  border-radius: 8px; padding: .45rem .8rem;
+}
+.net-banner__btn:hover{ filter: brightness(.97); }
