@@ -114,7 +114,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
             { element: '#newgoal-obj',
                 popover: {
                     title: 'Objetivo',
-                    description: 'Define un objetivo numérico (número + unidad) o marca Check si es un sí/no.',
+                    description: 'Define un objetivo numérico (número + unidad) o marca Check si es un sí/no. \nPor ejemplo, ir al gym podemos usar una meta de objetivo Check (Sí (he ido) / No (he ido)), o correr 5km podemos usar una meta numérica (El objetivo sería "5" y la unidad "Km")',
                     side: 'top'
                 }},
 
@@ -269,7 +269,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                                 style={{ ...INPUT, width: 140, height: 40, boxSizing: "border-box", opacity: isBool ? 0.55 : 1 }}
                             />
                             <input
-                                placeholder="unidad"
+                                placeholder="unidad*"
                                 disabled={isBool}
                                 required={!isBool}
                                 value={objetivoUnidad}

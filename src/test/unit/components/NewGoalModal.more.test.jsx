@@ -1,6 +1,6 @@
 // src/test/unit/components/NewGoalModal.more.test.jsx
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, test, expect, vi } from 'vitest';
 import NewGoalModal from '../../../components/NewGoalModal.jsx';
 
@@ -27,7 +27,9 @@ describe('NewGoalModal – casos extra', () => {
         // Objetivo numérico (no activar "Check")
         const objBox = document.querySelector('#newgoal-obj');
         const objNum = objBox.querySelector('input[type="number"]');
-        const objUnit = objBox.querySelector('input[placeholder="unidad"]');
+        const objUnit =
+            within(objBox).queryByPlaceholderText(/unidad/i) ||
+            objBox.querySelector('input[name="unidad"], input[name="unit"], input[aria-label="unidad"]');
         fireEvent.change(objNum,  { target: { value: '42' } });
         fireEvent.change(objUnit, { target: { value: 'km' } });
 

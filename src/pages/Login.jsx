@@ -52,6 +52,7 @@ export default function Login() {
     // mostrar/ocultar contraseña
     const [showPwd, setShowPwd] = useState(false);
     const pwdInfoRef = useRef(null);
+    const infoBtnRef = useRef(null);
     const [showPwdInfo, setShowPwdInfo] = useState(false);
 
     // reset password
@@ -132,6 +133,9 @@ export default function Login() {
                 title: 'Registro de cuenta',
                 text: 'Por seguridad, la contraseña debe tener al menos 12 caracteres.',
             });
+            infoBtnRef.current?.click();
+            infoBtnRef.current?.focus();
+            pwdInfoRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
             return;
         }
 
@@ -148,6 +152,9 @@ export default function Login() {
                 title: 'Registro de cuenta',
                 text: `Por seguridad, la contraseña debe tener: ${list}.`,
             });
+            infoBtnRef.current?.click();
+            infoBtnRef.current?.focus();
+            pwdInfoRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
             return;
         }
 
@@ -417,6 +424,7 @@ export default function Login() {
                             {/* Icono + popover FUERA del campo, a la derecha */}
                             <div ref={pwdInfoRef} style={S.infoArea}>
                                 <button
+                                    ref={infoBtnRef}
                                     type="button"
                                     onClick={() => setShowPwdInfo(v => !v)}
                                     style={S.infoBtnOut}

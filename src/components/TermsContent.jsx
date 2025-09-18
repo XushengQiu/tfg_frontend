@@ -19,7 +19,7 @@ export default function TermsContent() {
                 GoLife es un software adherido a la ley del Reino Español, y cómo tal, no deberá ser usado para registrar contenidos ilegales,
                 dañinos, difamatorios o que incurran en una infracción de cualquier derecho o interés legítimo de terceros.
                 GoLife<sup>TM</sup> se reserva completamente el derecho de comunicar a las autoridades pertinentes cualquier contenido o registro
-                que lesione las leyes nacionales, europeas o internacionales, de conformidad con la legislación vigenye,
+                que lesione las leyes nacionales, europeas o internacionales, de conformidad con la legislación vigente,
             </p>
             <p>
                 El código fuente de GoLife<sup>TM</sup> es de propiedad única y exclusiva de los desarrolladores (D. Eduardo Segarra Ledesma y D. Xusheng Qiu Huang), y los susodichos se

@@ -43,13 +43,16 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
             <div className="modal entry-modal" onClick={(e) => e.stopPropagation()}>
                 {/* Cabecera con más espacio bajo el título */}
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".9rem" }}>
-                    <h2 style={{ margin: 0 }}>{goal.nombre}</h2>
+                    <h2 style={{ margin: 0 }}>
+                        Nuevo registro de: <strong>{goal.nombre}</strong>
+                    </h2>
                     <span style={{ fontWeight: 600 }}>
-            {goal.duracionUnidad === "Indefinido"
-                ? "Indefinido"
-                : `${goal.duracionValor} ${cap(goal.duracionUnidad)}`}
-          </span>
+                        {goal.duracionUnidad === "Indefinido"
+                            ? "Indefinido"
+                            : `${goal.duracionValor} ${cap(goal.duracionUnidad)}`}
+                    </span>
                 </div>
+
 
                 {goal.tipo === "Num" && (
                     <p style={{ textAlign: "center", margin: "0.5rem 0 1rem 0" }}>

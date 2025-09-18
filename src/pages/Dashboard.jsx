@@ -2,7 +2,7 @@
 // src/pages/Dashboard.jsx
 // ───────────────────────────────────────────────────────────────
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth-context";
 import { capitalize as cap, fmtFecha } from "../utils/format";
 import appLogo from "../assets/icons/logo.svg";
@@ -76,6 +76,21 @@ export default function Dashboard() {
     // ── Buscador (filtra solo por nombre, visualmente) ──────────
     const [search, setSearch] = useState("");
     const TUTORIAL_GOAL_NAME = "Meta demo (tutorial)";
+    const [searchParams, setSearchParams] = useSearchParams();
+    const applySearch = React.useCallback((q) => {
+        setSearch(q);
+        setSearchParams(prev => {
+            const p = new URLSearchParams(prev);
+            if (q) p.set('q', q);
+            else p.delete('q');
+            return p;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    useEffect(() => {
+        const q = searchParams.get('q') || '';
+        setSearch(q);
+    }, [searchParams]);
 
     // Crea (si hace falta) una meta de ejemplo para el tour y la enfoca en el buscador
     const ensureTutorialGoal = useCallback(async () => {
@@ -138,17 +153,41 @@ export default function Dashboard() {
         } catch {}
 
         // Enfocamos esa meta en la tabla
-        setSearch(TUTORIAL_GOAL_NAME);
+        applySearch(TUTORIAL_GOAL_NAME);
         setSelectedGoal(null);
         return demo;
-    }, [goals, setGoals, setStats, setSearch]);
+    }, [goals, setGoals, setStats, applySearch]);
+
+    const runMiniTutorialHint = useCallback(() => {
+        const d = driver({
+            steps: [
+                {
+                    element: '#tour-help',
+                    popover: {
+                        title: 'Tutorial completo',
+                        description:
+                            'Cuando quieras, pulsa aquí para abrir el tutorial de 14 pasos.',
+                        side: 'left',
+                    },
+                },
+            ],
+            showProgress: false,
+            overlayClick: true,
+            disableActiveInteraction: false,
+            nextBtnText: 'Entendido',
+            doneBtnText: 'Entendido',
+        });
+        d.drive();
+    }, []);
+
+    const tourRef = useRef(null);
 
     const runTourWithRow = useCallback(() => {
+        try { tourRef.current?.destroy?.(); } catch {}
         const steps = [
             { element: 'img.title-logo',
                 popover: { title: '¡Bienvenido a GoLife!', description: 'Aquí empezarás a manejar tus metas como nunca.', side: 'bottom', align: 'start' } },
 
-            // Paso 2: Crear meta (bloqueamos interacción con el botón mientras está enfocado)
             { element: '#tour-create',
                 popover: { title: 'Crear meta', description: 'Haz clic aquí para crear una meta nueva, definir su objetivo y periodo. Dentro tienes otro tutorial!', side: 'left' } },
 
@@ -161,9 +200,8 @@ export default function Dashboard() {
             { element: '#tour-clear',
                 popover: { title: 'Limpiar búsqueda', description: 'Borra el texto del buscador y muestra todas las metas de nuevo.', side: 'bottom' } },
 
-            // Botones de la fila (IDs vienen de GoalRow)
             { element: '[id^="tour-row-entry-"]',
-                popover: { title: 'Registro', description: 'Añade un registro a esta meta. Puedes introducir uno al día y te ayudaran a mantener un historial de tu avances y ser constante.', side: 'left' } },
+                popover: { title: 'Registro', description: 'Añade un registro a esta meta. Puedes introducir uno al día y te ayudarán a mantener un historial de tu avances y ser constante.', side: 'left' } },
 
             { element: '[id^="tour-row-finalize-"]',
                 popover: { title: 'Finalizar', description: 'Marca la meta como completada. Haz esto cuando consideres que has completado tu meta. Una vez completada, una meta no puede tener nuevos registros ni editarse, pero si eliminarse', side: 'left' } },
@@ -174,15 +212,12 @@ export default function Dashboard() {
             { element: '[id^="tour-row-delete-"]',
                 popover: { title: 'Eliminar', description: 'Borra la meta (y sus registros) de forma permanente.', side: 'left' } },
 
-            // NUEVO: tabla de registros
             { element: '#tour-records',
                 popover: { title: 'Tabla de registros', description: 'Aquí verás los registros de la meta seleccionada. Puedes eliminar registros si la meta no está finalizada.', side: 'left' } },
 
-            // NUEVO: Meta y descripción
             { element: '#tour-goal-desc',
                 popover: { title: 'Meta y descripción', description: 'Aquí se muestra el nombre de la meta seleccionada y su descripción. Te sirve como recordatorio del objetivo y cualquier detalle importante.', side: 'left' } },
 
-            // NUEVO: Insight (calendario para Check, gráfico para Num)
             { element: '#tour-insight',
                 popover: { title: 'Calendario / Gráfico', description: 'Las metas de objetivo Check muestran un calendario navegable por meses. Las metas de objetivo numeral muestran un gráfico con filtros (periodo, rango manual y primeros/últimos registros).', side: 'left' } },
 
@@ -201,10 +236,40 @@ export default function Dashboard() {
             nextBtnText: 'Siguiente',
             doneBtnText: 'Finalizar',
             overlayClick: false,
-            disableActiveInteraction: true, // ← bloquea clics en el elemento destacado (p. ej. Crear meta)
+            disableActiveInteraction: true,
         });
+        tourRef.current = d;
+        let cleaned = false;
+        const body = document.body;
+        const obs = new MutationObserver(() => {
+            const overlayGone = !document.querySelector('.driver-overlay, .driver-popover');
+            const inactive    = !body.classList.contains('driver-active');
+            if ((overlayGone || inactive) && !cleaned) {
+                cleaned = true;
+                obs.disconnect();
+                requestAnimationFrame(() => {
+                    applySearch('');
+                });
+            }
+        });
+        obs.observe(body, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+
+
+        try {
+            d.on?.('destroyed', () => {
+                if (!cleaned) {
+                    cleaned = true;
+                    obs.disconnect();
+                    requestAnimationFrame(() => {
+                        applySearch('');
+                    });
+                }
+            });
+        } catch {}
+
         d.drive();
-    }, []);
+    }, [applySearch]);
+
 
     // ── Ordenación ──────────────────────────────────────────────
     const [sortKey, setSortKey] = useState(null);     // 'nombre' | 'fecha' | 'periodo' | null
@@ -831,12 +896,12 @@ export default function Dashboard() {
                         type="text"
                         value={search}
                         placeholder="Buscar metas por nombre…"
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => applySearch(e.target.value)}
                     />
                     <button
                         id="tour-clear"
                         className="filter-clear dash-search__clear"
-                        onClick={() => setSearch("")}
+                        onClick={() => applySearch("")}
                         disabled={!search}
                         title="Limpiar búsqueda"
                     >
@@ -1013,7 +1078,14 @@ export default function Dashboard() {
                             a la izquierda del botón de perfil, identificado con el icono <img src={tutorialIcon} alt="Tutorial" className="inline-icon" />.
                         </p>
                         <div className="modal-actions">
-                            <button className="back-btn" onClick={() => setShowWelcome(false)}>
+                            <button
+                                className="btn-modal-primary"
+                                onClick={() => {
+                                    setShowWelcome(false);
+                                    // un pelín de margen para que cierre la capa y luego mostramos la pista
+                                    setTimeout(() => runMiniTutorialHint(), 200);
+                                }}
+                            >
                                 Entendido
                             </button>
                         </div>
