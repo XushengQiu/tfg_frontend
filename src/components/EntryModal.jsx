@@ -5,7 +5,6 @@ import "../index.css";
 const getTodayISO = () => new Date().toISOString().substring(0, 10);
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 
-// fecha creación de la meta como YYYY-MM-DD (soporta string o array)
 const getGoalCreationISO = (goal) => {
     const raw = Array.isArray(goal?.fecha) ? goal.fecha[0] : goal?.fecha;
     return raw ? String(raw).slice(0, 10) : null;
@@ -18,7 +17,6 @@ export default function EntryModal({ open, goal, onClose, onSave }) {
         valorNum: "",
     });
 
-    // al abrir: fecha = max(hoy, fechaCreaciónMeta)
     useEffect(() => {
         if (open && goal) {
             const min = getGoalCreationISO(goal) || getTodayISO();

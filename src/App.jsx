@@ -6,7 +6,6 @@ import Dashboard   from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ServiceBanner from './components/ServiceBanner';
 
-/* ─── Wrapper que SOLO muestra children si hay sesión ─── */
 function Protected({ children }) {
     const { user } = useAuth();
     // si no hay usuario, redirige (cambia URL) a /login

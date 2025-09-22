@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, test, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
-// mock muy simple de Modal (como ya tenías)
+// mock muy simple de Modal
 vi.mock('../../../components/Modal.jsx', () => ({
     default: ({ open, children }) => (open ? <div role="dialog">{children}</div> : null)
 }));

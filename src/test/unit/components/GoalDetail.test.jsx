@@ -8,7 +8,7 @@ const mkGoal = (over = {}) => ({
     _id: 'g1',
     nombre: 'Meta X',
     descripcion: 'Desc',
-    tipo: 'Num',           // o 'Bool'
+    tipo: 'Num',
     unidad: 'kg',
     finalizado: false,
     registros: [],
@@ -34,12 +34,9 @@ describe('GoalDetail', () => {
         });
         render(<GoalDetail goal={goal} />);
 
-        // Cabeceras
         expect(screen.getByText(/Valor \(kg\)/)).toBeInTheDocument();
 
-        // Dos filas + orden descendente por fecha
-        const rows = screen.getAllByRole('row').slice(1); // quitar header
-        // La primera fila debe contener la fecha 02/01/2025 (es-ES)
+        const rows = screen.getAllByRole('row').slice(1);
         expect(within(rows[0]).getByText(/02\/01\/2025/)).toBeInTheDocument();
         expect(within(rows[0]).getByText('15')).toBeInTheDocument();
         expect(within(rows[1]).getByText(/01\/01\/2025/)).toBeInTheDocument();
@@ -58,11 +55,9 @@ describe('GoalDetail', () => {
         });
         render(<GoalDetail goal={goal} onDeleteRecord={onDeleteRecord} />);
 
-        // Hay iconos accesibles por alt
         expect(screen.getByAltText('Sí')).toBeInTheDocument();
         expect(screen.getByAltText('No')).toBeInTheDocument();
 
-        // Botón Eliminar dispara callback con (goalId, fecha)
         const btns = screen.getAllByRole('button', { name: /eliminar/i });
         fireEvent.click(btns[0]);
         expect(onDeleteRecord).toHaveBeenCalledWith('g1', expect.any(String));

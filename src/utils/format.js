@@ -16,7 +16,6 @@ export function todayISO() {
     return new Date().toISOString().substring(0, 10);
 }
 
-
 // Si me sigue saltando el error:
 // const format = { capitalize, fmtFecha, todayISO };
 // export default format;

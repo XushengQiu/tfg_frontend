@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/pages/Dashboard.jsx
-// ───────────────────────────────────────────────────────────────
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth-context";
@@ -34,7 +32,7 @@ import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import "../index.css";
 
-/* Extrae mensaje de error legible */
+/* Extraigo mensaje de error legible */
 const apiError = (err, fallback) => {
     const res = err?.response;
     const status = res?.status;
@@ -92,7 +90,7 @@ export default function Dashboard() {
         setSearch(q);
     }, [searchParams]);
 
-    // Crea (si hace falta) una meta de ejemplo para el tour y la enfoca en el buscador
+    // Creo (si hace falta) una meta de ejemplo para el tour y la enfoco en el buscador
     const ensureTutorialGoal = useCallback(async () => {
         // ¿Ya existe una apta (no finalizada)?
         let demo = goals.find(g => g.nombre === TUTORIAL_GOAL_NAME && !g.finalizado);
@@ -254,7 +252,6 @@ export default function Dashboard() {
         });
         obs.observe(body, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
 
-
         try {
             d.on?.('destroyed', () => {
                 if (!cleaned) {
@@ -275,7 +272,6 @@ export default function Dashboard() {
     const [sortKey, setSortKey] = useState(null);     // 'nombre' | 'fecha' | 'periodo' | null
     const [sortDir, setSortDir] = useState("asc");    // 'asc' | 'desc'
 
-    // NUEVO: refs para header y título (para escribir --title-w)
     const headerRef = useRef(null);
     const titleRef  = useRef(null);
 
@@ -333,7 +329,6 @@ export default function Dashboard() {
         [upsertGoal, syncSelected]
     );
 
-
     const startTutorialFlow = useCallback(() => {
         openConfirm({
             title: "Iniciar tutorial",
@@ -358,7 +353,6 @@ export default function Dashboard() {
 
         });
     }, [ensureTutorialGoal, runTourWithRow, ensureGoalDetail]);
-
 
     // Carga inicial
     const loadData = useCallback(async () => {
@@ -396,12 +390,10 @@ export default function Dashboard() {
     useEffect(() => {
         if (location.state?.firstVisit) {
             setShowWelcome(true);
-            navigate(".", { replace: true, state: null }); // limpia el state
+            navigate(".", { replace: true, state: null }); // limpiar el state
         }
     }, [location.state, navigate]);
 
-
-    // NUEVO: fija la CSS var --title-w con el ancho real del <h1> y re-calcula en cambios
     useEffect(() => {
         const headerEl = headerRef.current;
         const titleEl  = titleRef.current;
@@ -412,11 +404,11 @@ export default function Dashboard() {
             headerEl.style.setProperty('--title-w', `${Math.round(w)}px`);
         };
 
-        setVar();                                  // primera medición
-        const ro = new ResizeObserver(setVar);     // si cambia el tamaño del <h1>
+        setVar();
+        const ro = new ResizeObserver(setVar);
         ro.observe(titleEl);
 
-        window.addEventListener('resize', setVar); // al redimensionar ventana
+        window.addEventListener('resize', setVar);
         if (document.fonts?.ready) {
             document.fonts.ready.then(setVar).catch(() => {});
         }
@@ -492,8 +484,8 @@ export default function Dashboard() {
     };
 
     /* ───────────────── Confirmación modal genérica ─────────────── */
-    // Añadimos cancelClass para poder personalizar el botón "Cancelar" cuando haga falta
-    const [confirmDlg, setConfirmDlg] = useState(null); // {title, message, confirmText, cancelText, confirmClass, cancelClass, onConfirm}
+    // Añado cancelClass para poder personalizar el botón "Cancelar" cuando haga falta
+    const [confirmDlg, setConfirmDlg] = useState(null);
     const [confirmBusy, setConfirmBusy] = useState(false);
     const openConfirm = (cfg) =>
         setConfirmDlg({
@@ -501,7 +493,7 @@ export default function Dashboard() {
             message: "",
             confirmText: "Aceptar",
             cancelText: "Cancelar",
-            confirmClass: "back-btn", // por defecto botón naranja
+            confirmClass: "back-btn",
             cancelClass: "back-btn",
             ...cfg,
         });
@@ -533,9 +525,9 @@ export default function Dashboard() {
             title: "Finalizar meta",
             message: "¿Quieres marcar esta meta como COMPLETADA?\nEsta acción es irreversible.",
             confirmText: "Aceptar",
-            confirmClass: "btn-soft-success", // verde suave #63db60
+            confirmClass: "btn-soft-success",
             cancelText: "Cancelar",
-            cancelClass: "btn-soft-danger",   // rojo suave #c4374c
+            cancelClass: "btn-soft-danger",
             onConfirm: async () => await doFinalize(id),
         });
 
@@ -864,6 +856,7 @@ export default function Dashboard() {
 
                 {/* DERECHA */}
                 <div className="dashboard-header-right">
+                    <span className="tutorial-label"><strong>Tutorial:</strong></span>
                     <button
                         className="avatar-btn"
                         id="tour-help"
@@ -964,7 +957,7 @@ export default function Dashboard() {
                                         objectiveLabel={objectiveLabel}
                                         onSelect={(goal) => {
                                             setSelectedGoal((cur) => {
-                                                const next = cur?._id === goal._id ? null : goal; // toggle
+                                                const next = cur?._id === goal._id ? null : goal;
                                                 if (next) ensureGoalDetail(next);
                                                 return next;
                                             });
@@ -1045,7 +1038,6 @@ export default function Dashboard() {
                 goal={editGoal}
                 onClose={() => setEditGoal(null)}
                 onSave={(form) => {
-                    // Pasamos tal cual; el Dashboard ya construye el body con diffs
                     const f = { ...form };
                     return handleSaveEdit(f);
                 }}
@@ -1082,7 +1074,6 @@ export default function Dashboard() {
                                 className="btn-modal-primary"
                                 onClick={() => {
                                     setShowWelcome(false);
-                                    // un pelín de margen para que cierre la capa y luego mostramos la pista
                                     setTimeout(() => runMiniTutorialHint(), 200);
                                 }}
                             >

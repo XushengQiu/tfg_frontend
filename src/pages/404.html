@@ -151,8 +151,6 @@
             <em>se reanudará pronto el servicio</em>.
         </div>
 
-        <!-- Botones eliminados a petición -->
-
         <ul class="tips">
             <li>Comprueba que la URL esté bien escrita.</li>
             <li>Si llegaste aquí desde un enlace, puede que esté desactualizado.</li>
@@ -172,7 +170,6 @@
 </main>
 
 <script>
-    // Año actual
     document.getElementById('year').textContent = new Date().getFullYear();
 
     // Indicador de red
@@ -215,7 +212,6 @@
         if (mail) mail.setAttribute('href', 'mailto:' + to);
     })();
 
-    // Los siguientes elementos pueden no existir (botones eliminados)
     const goBack = document.getElementById('go-back');
     if (goBack) goBack.onclick = function () {
         if (history.length > 1) history.back();

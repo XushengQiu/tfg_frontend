@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/pages/Login.jsx
-// ───────────────────────────────────────────────────────────────
 import React, { useEffect, useState, useRef } from 'react';
 import {
     getAuth,
@@ -16,7 +14,6 @@ import { getProfile } from '../services/api';
 import TermsContent from '../components/TermsContent';
 import DataPolicyContent from '../components/DataPolicyContent';
 
-// assets
 import googleLogo from '../assets/icons/google_logo.png';
 import libraryBG from '../assets/media/library_1536x1760.png';
 import infoIcon from '../assets/icons/informacion.png';
@@ -200,7 +197,7 @@ export default function Login() {
                 setToast({title: 'Inicio con Google', text});
             }
         } finally {
-            // Pase lo que pase, no dejes el overlay colgado
+            // Pase lo que pase, no dejo el overlay colgado
             setBusy(false);
             setPhase(null);
         }
@@ -402,8 +399,7 @@ export default function Login() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    /* RECOMENDADO: sin minLength aquí, ver nota al final */
-                                    style={{ ...S.input, paddingRight: '2.2rem' }}  // solo deja hueco al “ojo”
+                                    style={{ ...S.input, paddingRight: '2.2rem' }}
                                     onFocus={(e) => Object.assign(e.target.style, S.inputFocus)}
                                     onBlur={(e) => {
                                         e.target.style.boxShadow = '';

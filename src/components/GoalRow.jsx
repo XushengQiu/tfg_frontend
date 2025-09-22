@@ -5,7 +5,7 @@ import "../index.css";
 
 export default function GoalRow({
                                     goal,
-                                    selected = false,        // ← marcar fila activa (se pinta en gris)
+                                    selected = false,        // Marcador de fila activa
                                     createdLabel,
                                     objectiveLabel,
                                     onSelect,

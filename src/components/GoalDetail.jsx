@@ -2,7 +2,6 @@
 import React from "react";
 import "../index.css";
 
-// 👇 nuevos iconos
 import trueIcon from "../assets/icons/true.png";
 import falseIcon from "../assets/icons/false.png";
 

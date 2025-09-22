@@ -1,7 +1,5 @@
-// ───────────────────────────────────────────────────────────────
 // src/services/api.js
 // Axios + helpers autenticados con Firebase
-// ───────────────────────────────────────────────────────────────
 import axios       from "axios";
 import { getAuth } from "firebase/auth";
 
@@ -55,7 +53,6 @@ api.interceptors.response.use(
                 return api.request(cfg); // reintento
             }
         }
-
         // sin más reintentos → informar estado degradado
         if (retryableStatus || isNetwork) {
             emit('net:degraded', { status: status || 'network', retryIn: null, attempt: cfg.__retryCount || 0 });

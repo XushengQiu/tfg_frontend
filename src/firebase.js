@@ -2,7 +2,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// 🔑  Lee las variables que pusiste en .env  (todas empiezan por REACT_APP_)
 const firebaseConfig = {
     apiKey:            process.env.REACT_APP_FB_API_KEY,
     authDomain:        process.env.REACT_APP_FB_AUTH_DOMAIN,
@@ -12,7 +11,6 @@ const firebaseConfig = {
     appId:             process.env.REACT_APP_FB_APP_ID,
 };
 
-// 🔧  Inicializaciones de Firebase
 export const app            = initializeApp(firebaseConfig);
 export const auth           = getAuth(app);
 export const db             = getFirestore(app);

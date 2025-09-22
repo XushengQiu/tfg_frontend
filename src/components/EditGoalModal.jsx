@@ -2,14 +2,12 @@
 import { useEffect, useState } from "react";
 import "../index.css";
 
-// Helper para oscurecer un color hexadecimal (JS puro)
 const darken = (hex, f = 0.18) => {
     const n = hex.replace("#", "");
     const to = (i) =>
         Math.max(0, Math.min(255, Math.floor(parseInt(n.slice(i, i + 2), 16) * (1 - f))));
     return `rgb(${to(0)}, ${to(2)}, ${to(4)})`;
 };
-
 
 export default function EditGoalModal({ open, goal, onClose, onSave }) {
     const [form, setForm] = useState({
@@ -46,7 +44,6 @@ export default function EditGoalModal({ open, goal, onClose, onSave }) {
         onSave(form);
     };
 
-    /* Estilo compacto + inputs “como antes” */
     const INPUT = {
         borderRadius: 6,
         border: "1px solid #E0E0E0",

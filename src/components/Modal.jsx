@@ -27,7 +27,6 @@ export default function Modal({
 
     useEffect(() => {
         if (!open) return;
-        // bloqueo del scroll de fondo
         const prev = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = prev; };

@@ -5,7 +5,7 @@ import { describe, test, expect, vi } from 'vitest';
 // Mockea el contexto para controlar user
 vi.mock('../../../auth-context.jsx', () => {
     return {
-        useAuth: () => ({ user: null }),           // cambia en cada test
+        useAuth: () => ({ user: null }),
         AuthProvider: ({ children }) => <>{children}</>,
     };
 });

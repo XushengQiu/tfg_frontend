@@ -29,7 +29,7 @@ describe('EntryModal', () => {
         render(<EntryModal open goal={{...baseGoal, tipo:'Num'}} onClose={()=>{}} onSave={onSave} />);
 
         const fecha = screen.getByLabelText(/fecha/i);
-        expect(fecha).toHaveAttribute('min', '2024-01-10'); // minDate correcto
+        expect(fecha).toHaveAttribute('min', '2024-01-10');
         fireEvent.change(fecha, { target: { value: '2024-01-10' }});
 
         // valor numérico válido

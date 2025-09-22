@@ -3,7 +3,6 @@ import React from 'react';
 import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { describe, test, expect, vi } from 'vitest';
 
-/* --- mocks (igual que ya tenías) --- */
 vi.mock('firebase/app', () => ({ initializeApp: vi.fn(() => ({})) }));
 vi.mock('firebase/firestore', () => ({ getFirestore: vi.fn(() => ({})) }));
 vi.mock('firebase/auth', () => ({
@@ -38,12 +37,10 @@ describe('Login', () => {
     test('credenciales inválidas → muestra error', async () => {
         render(<Login />);
 
-        // Botón submit del email-login es "Login"
         const submitBtn = screen.getByRole('button', { name: /^login$/i });
         const form = submitBtn.closest('form');
         if (!form) throw new Error('No se encontró el formulario de login');
 
-        // Inputs: selecciona por tipo dentro del form (evita colisiones con "contraseña")
         const emailInput = form.querySelector('input[type="email"]');
         const pwdInput   = form.querySelector('input[type="password"]');
         if (!emailInput || !pwdInput) {
@@ -55,7 +52,6 @@ describe('Login', () => {
         fireEvent.change(pwdInput,   { target: { value: '123456' } });
         fireEvent.click(submitBtn);
 
-        // Toast de error esperado
         expect(await screen.findByText(/no se pudo iniciar sesión/i)).toBeInTheDocument();
     });
 
@@ -77,7 +73,7 @@ describe('Login', () => {
         fireEvent.change(pwdInput,   { target: { value: '123456' } });
         fireEvent.click(submitBtn);
 
-        // Espera a que se asiente el estado y verifica que NO aparece el error
+        // Espero a que se asiente el estado y verifica que NO aparece el error
         await waitFor(() => {
             expect(screen.queryByText(/no se pudo iniciar sesión/i)).toBeNull();
         });

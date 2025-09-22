@@ -20,14 +20,12 @@ const isDecimal2In = (s, a, b) => {
     return !Number.isNaN(n) && n >= a && n <= b;
 };
 
-// Helper para oscurecer un color hexadecimal (JS puro)
 const darken = (hex, f = 0.18) => {
     const n = hex.replace("#", "");
     const to = (i) =>
         Math.max(0, Math.min(255, Math.floor(parseInt(n.slice(i, i + 2), 16) * (1 - f))));
     return `rgb(${to(0)}, ${to(2)}, ${to(4)})`;
 };
-
 
 export default function NewGoalModal({ open, onClose, onCreate }) {
     const [nombre, setNombre] = useState("");
@@ -148,7 +146,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
             nextBtnText: 'Siguiente',
             doneBtnText: 'Finalizar',
             overlayClick: false,
-            disableActiveInteraction: true   // ← bloquea los clics mientras estás en cada paso
+            disableActiveInteraction: true   // ← bloqueador de clics mientras estás en cada paso
         });
 
         d.drive();
@@ -156,7 +154,6 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
 
     if (!open) return null;
 
-    /* Estilo compacto “como antes” */
     const INPUT = {
         borderRadius: 6,
         border: "1px solid #E0E0E0",
@@ -180,7 +177,7 @@ export default function NewGoalModal({ open, onClose, onCreate }) {
                 className="modal"
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    width: "min(620px, 92vw)",          // ← más estrecho
+                    width: "min(620px, 92vw)",
                     maxWidth: 620,
                     padding: "18px 20px 14px",
                     borderRadius: 14,

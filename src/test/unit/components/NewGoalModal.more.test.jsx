@@ -46,7 +46,6 @@ describe('NewGoalModal – casos extra', () => {
                 objetivoNum: '42',
                 objetivoUnidad: 'km',
         }));
-        // En tu implementación actual el tipo identifica el modo numérico:
         expect(payload.tipo).toBe('num');
     });
 

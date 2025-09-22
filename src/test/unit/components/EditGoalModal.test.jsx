@@ -18,11 +18,9 @@ describe('EditGoalModal', () => {
         const onSave = vi.fn();
         render(<EditGoalModal open goal={goalNum} onClose={() => {}} onSave={onSave} />);
 
-        // label envuelve al input -> getByLabelText funciona
         const nombre = screen.getByLabelText(/nombre/i);
         fireEvent.change(nombre, { target: { value: 'Correr+' } });
 
-        // objetivo visible en tipo Num
         const objetivoNum = screen.getByDisplayValue(String(goalNum.valorObjetivo));
         fireEvent.change(objetivoNum, { target: { value: '12.5' } });
 
@@ -36,17 +34,14 @@ describe('EditGoalModal', () => {
     test('marcar “Indefinido” deshabilita inputs de duración', () => {
         render(<EditGoalModal open goal={goalNum} onClose={() => {}} onSave={() => {}} />);
 
-        // 1) Encuentra el bloque "Duración:"
         const dur = screen.getByText(/^duración:/i);
         const durBlock = dur.closest('label');
         if (!durBlock) throw new Error('No se encontró el bloque de Duración');
 
-        // 2) Checkbox "Indefinido" dentro del bloque
         const indefCheckbox = durBlock.querySelector('input[type="checkbox"]');
         if (!indefCheckbox) throw new Error('No se encontró el checkbox Indefinido');
         fireEvent.click(indefCheckbox);
 
-        // 3) Ahora los inputs deben estar deshabilitados
         const num   = durBlock.querySelector('input[type="number"]');
         const unit  = durBlock.querySelector('select');
         expect(num).toHaveProperty('disabled', true);

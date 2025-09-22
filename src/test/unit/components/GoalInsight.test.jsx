@@ -54,13 +54,11 @@ describe('GoalInsight — Num (gráfico + filtros)', () => {
     test('renderiza título, objetivo y filtro por defecto (rango)', () => {
         render(<GoalInsight goal={mkNumGoal()} />);
 
-        // Título y objetivo
         expect(screen.getByText(/Evolución de registros/i)).toBeInTheDocument();
-        expect(screen.getByText(/Objetivo:/)).toBeInTheDocument(); // línea de objetivo en el SVG
+        expect(screen.getByText(/Objetivo:/)).toBeInTheDocument();
 
-        // Filtro por defecto: "Rango manual" con 2 inputs date y botón Limpiar oculto
         expect(screen.getByText('Filtrar por:')).toBeInTheDocument();
-        // Los 2 inputs date por título (más robusto en JSDOM)
+
         const from = screen.getByTitle('Fecha inicio (incluida)');
         const to   = screen.getByTitle('Fecha fin (incluida)');
         expect(from).toBeInTheDocument();
@@ -75,16 +73,14 @@ describe('GoalInsight — Num (gráfico + filtros)', () => {
         fireEvent.change(from, { target: { value: '2025-02-01' } });
         fireEvent.change(to,   { target: { value: '2025-02-28' } });
 
-        // Aparece el botón Limpiar
+
         const btnClear = screen.getByRole('button', { name: /limpiar/i });
         expect(btnClear).toBeInTheDocument();
 
-        // En el SVG hay círculos (= puntos). Para febrero deben ser menos que el total (4 → 2)
         const beforeClear = container.querySelectorAll('svg circle').length;
         expect(beforeClear).toBeGreaterThan(0);
-        expect(beforeClear).toBeLessThan(NUM_REGS.length + 1); // +1 por si apareciera el punto de hover (no debería sin mover ratón)
+        expect(beforeClear).toBeLessThan(NUM_REGS.length + 1);
 
-        // Al limpiar volvemos a ver todos los puntos (>= número de registros)
         fireEvent.click(btnClear);
         const afterClear = container.querySelectorAll('svg circle').length;
         expect(afterClear).toBeGreaterThanOrEqual(NUM_REGS.length);
@@ -93,25 +89,19 @@ describe('GoalInsight — Num (gráfico + filtros)', () => {
     test('Periodo: semana/mes/año muestran selects e hint correctos', () => {
         render(<GoalInsight goal={mkNumGoal()} />);
 
-        // Cambiar a "Periodo"
         fireEvent.click(screen.getByRole('radio', { name: /Periodo/i }));
 
-        // Hay un <select> para el modo de periodo
         const selects = screen.getAllByRole('combobox');
         expect(selects.length).toBeGreaterThan(0);
 
-        // Elegimos "semana" → aparece combo de semanas y hint de rango
         fireEvent.change(selects[0], { target: { value: 'semana' } });
         expect(screen.getByTitle('Semana del mes')).toBeInTheDocument();
 
-        // El hint indica "A partir de ..." porque es indefinido
         expect(screen.getByText(/A partir de/i)).toBeInTheDocument();
 
-        // Cambiamos a "mes" → ya no hay combo de semanas
         fireEvent.change(selects[0], { target: { value: 'mes' } });
         expect(screen.queryByTitle('Semana del mes')).toBeNull();
 
-        // Cambiamos a "anio" para cubrir rama
         fireEvent.change(selects[0], { target: { value: 'anio' } });
         expect(screen.getByText(/A partir de|Dentro de/)).toBeInTheDocument();
     });
@@ -123,11 +113,9 @@ describe('GoalInsight — Num (gráfico + filtros)', () => {
         const inputN = screen.getByRole('spinbutton', { name: /número/i });
         fireEvent.change(inputN, { target: { value: '3' } });
 
-        // Alternamos tipo
         const selEdge = screen.getByRole('combobox', { name: /tipo/i });
         fireEvent.change(selEdge, { target: { value: 'primeros' } });
 
-        // Hint fijo para esta vista
         expect(screen.getByText(/De la selección actual\./)).toBeInTheDocument();
     });
 });
@@ -143,7 +131,6 @@ describe('GoalInsight — Bool (calendario + navegación + racha)', () => {
         expect(legend).toHaveTextContent(/(^|\s)Sí(\s|$)/u);
         expect(legend).toHaveTextContent(/(^|\s)No(\s|$)/u);
 
-        // Hay celdas con estados
         expect(container.querySelector('.cal-day.ok')).toBeTruthy();
         expect(container.querySelector('.cal-day.ko')).toBeTruthy();
         // puede que haya "none" según el mes (huecos)
@@ -153,30 +140,25 @@ describe('GoalInsight — Bool (calendario + navegación + racha)', () => {
     test('navegación de meses con botones accesibles', () => {
         render(<GoalInsight goal={mkBoolGoal()} />);
 
-        // Mes actual (entre paréntesis)
         const monthLabel = screen.getByText(/\(.+\)/).textContent;
 
-        // Podemos ir al mes siguiente (tienes un registro en octubre)
         const nextBtn = screen.getByRole('button', { name: /Mes siguiente/i });
         expect(nextBtn).not.toBeDisabled();
         fireEvent.click(nextBtn);
 
-        // El label de mes debe cambiar
         const newLabel = screen.getByText(/\(.+\)/).textContent;
         expect(newLabel).not.toEqual(monthLabel);
 
-        // También existe el botón de anterior (puede estar deshabilitado según minYM)
         expect(screen.getByRole('button', { name: /Mes anterior/i })).toBeInTheDocument();
     });
 
     test('Numeric: aparece tooltip al mover el ratón sobre el SVG y desaparece al salir', () => {
-        const goal = mkNumGoal(); // ya definido arriba en tu test
+        const goal = mkNumGoal();
         const { container } = render(<GoalInsight goal={goal} />);
 
         const svg = container.querySelector('svg.insight-svg');
         expect(svg).toBeInTheDocument();
 
-        // JSDOM devuelve width=0, así que mockeamos el bbox para que onMove funcione
         svg.getBoundingClientRect = () => ({
             left: 0,
             top: 0,
@@ -189,11 +171,9 @@ describe('GoalInsight — Bool (calendario + navegación + racha)', () => {
             toJSON: () => {}
         });
 
-        // Disparamos el movimiento del ratón → ejecuta onMove (función no cubierta aún)
         fireEvent.mouseMove(svg, { clientX: 120, clientY: 100 });
         expect(container.querySelector('.insight-tooltip')).toBeInTheDocument();
 
-        // Salimos del SVG → ejecuta onLeave (otra función sin cubrir)
         fireEvent.mouseLeave(svg);
         expect(container.querySelector('.insight-tooltip')).toBeNull();
     });

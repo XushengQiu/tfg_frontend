@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
                 setProfile(null);
 
                 if (status === 404) {
-                    // Usuario logueado pero sin perfil en tu API → Onboarding (SIN cerrar sesión)
+                    // Usuario logueado pero sin perfil en nuestro API → Onboarding (SIN cerrar sesión)
                     if (path !== '/login' && path !== '/onboarding') {
                     navigate('/onboarding', { replace: true });
                     }
@@ -156,9 +156,9 @@ export function AuthProvider({ children }) {
         <AuthCtx.Provider value={{
             user,
             profile,
-            login,              // Google
-            loginEmail,         // Email: login
-            registerEmail,      // Email: alta (luego Onboarding hace el POST /api/usuarios)
+            login,   // Google
+            loginEmail,   // Email: login
+            registerEmail,   // Email: alta (luego Onboarding hace el POST /api/usuarios)
             logout,
             deleteAccount
         }}>

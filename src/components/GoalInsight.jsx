@@ -46,7 +46,7 @@ function clampYM(v, min, max) {
     return v;
 }
 
-// ── semanas del mes (lunes inicio) ──
+// ── semanas del mes ──
 function weekCountInMonth(year, month1) {
     const y = year, m0 = month1 - 1;
     const first = new Date(y, m0, 1);
@@ -122,7 +122,6 @@ export default function GoalInsight({ goal }) {
 /* ---------------------- NUMERIC CHART (SVG) + FILTROS ---------------------- */
 
 function NumericChart({ goal }) {
-    // límites de dominio: inicio = creación; fin = estadisticas.fechaFin (o hoy si no viene)
     const minDate =
         parseISO(goal.fecha) ||
         (goal.registros?.length
@@ -173,7 +172,6 @@ function NumericChart({ goal }) {
 
     const weeksInSelMonth = useMemo(() => weekCountInMonth(selYear, selMonth), [selYear, selMonth]);
 
-    // aplicar SOLO el filtro activo
     const regsFiltered = useMemo(() => {
         const regsAsc = [...goal.registros]
             .filter((r) => typeof r.valorNum === "number" && typeof r.fecha === "string")
@@ -193,7 +191,7 @@ function NumericChart({ goal }) {
 
         if (activeFilter === "rango") {
             let start = fromISO ? maxISODate(fromISO, minISO) : minISO;
-            // en indefinidas no imponemos tope superior, solo respetamos start<=end
+            // en indefinidas no impongo tope superior, solo respeto start<=end
             let end   = toISOValue || maxISO;
             if (!isNumIndef) end = minISODate(end, maxISO);
             if (end < start) end = start;
@@ -212,15 +210,11 @@ function NumericChart({ goal }) {
         return out;
     }, [
         goal, activeFilter,
-        // periodo
         periodMode, selYear, selMonth, selWeek, minISO, maxISO,
-        // rango
         fromISO, toISOValue, isNumIndef,
-        // registros
         whichEdge, edgeCount
     ]);
 
-    // ——— puntos y fechas ———
     const isoDates = useMemo(() => regsFiltered.map((r) => r.fecha), [regsFiltered]);
     const { points, yMin, yMax } = useMemo(() => {
         const values = regsFiltered.map((r) => r.valorNum);
@@ -234,7 +228,6 @@ function NumericChart({ goal }) {
         return { points, yMin, yMax };
     }, [regsFiltered, goal]);
 
-    // ——— rango mostrado (SIEMPRE, aunque no haya puntos) ———
     const displayedRange = useMemo(() => {
         if (activeFilter === "rango") {
             const start = fromISO ? maxISODate(fromISO, minISO) : minISO;
@@ -248,12 +241,10 @@ function NumericChart({ goal }) {
             if (periodMode === "none") {
                 return { start: minISO, end: maxISO };
             }
-            // mostrar SIEMPRE el rango del periodo completo (no recortado)
             const pr = computePeriodRange(periodMode, selYear, selMonth, selWeek);
             return pr;
         }
 
-        // registros: por las fechas reales (si no hay, mostramos dominio completo)
         if (isoDates.length > 0) {
             return { start: isoDates[0], end: isoDates[isoDates.length - 1] };
         }
@@ -264,7 +255,6 @@ function NumericChart({ goal }) {
     const tickIndices = useMemo(() => {
         if (isoDates.length === 0) return [];
 
-        // mapa fecha->indice
         const idxByISO = new Map();
         isoDates.forEach((iso, i) => { if (!idxByISO.has(iso)) idxByISO.set(iso, i); });
         const collect = (set, iso) => {
@@ -319,7 +309,6 @@ function NumericChart({ goal }) {
             return weeklyTicks(a, b);
         }
 
-        // PERIODO
         if (activeFilter === "periodo") {
             if (periodMode === "none") {
                 const a = minISO, b = maxISO;
@@ -332,7 +321,6 @@ function NumericChart({ goal }) {
             const { start: a, end: b } = intersectRanges({ start: minISO, end: maxISO }, pr);
 
             if (periodMode === "semana") {
-                // semana: todos los días dentro del tramo visible
                 return isoDates
                     .map((iso, i) => ({ iso, i }))
                     .filter(({ iso }) => iso >= a && iso <= b)
@@ -390,14 +378,12 @@ function NumericChart({ goal }) {
         setEdgeCount(String(n));
     };
 
-    // corregir semana fuera de rango al cambiar de mes/año
     React.useEffect(() => {
         const weeks = weekCountInMonth(selYear, selMonth);
         if (periodMode === "semana" && selWeek > weeks) setSelWeek(weeks);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selMonth, selYear, periodMode]);
 
-    // utilidades para deshabilitar meses anteriores al inicio
     const minMonthForYear = selYear === yearMin ? (minDate.getMonth() + 1) : 1;
 
     return (
@@ -660,7 +646,7 @@ function BooleanCalendar({ goal }) {
             : null) ||
         new Date();
 
-    // Base para casos NO indefinidos: estadisticas.fechaFin o hoy
+    // Base para casos NO indefinidos: estadisticas.fechaFin u hoy
     const statsEnd = parseISO(goal.estadisticas?.fechaFin);
     const baseEnd = statsEnd || new Date();
 
@@ -687,7 +673,6 @@ function BooleanCalendar({ goal }) {
         }
     }
 
-    // por defecto: mes del día actual (clampeado a [minYM, maxYM])
     const initial = clampYM({ y: today.getFullYear(), m: today.getMonth() }, minYM, maxYM);
 
     const [ym, setYM] = useState(initial);
@@ -712,11 +697,9 @@ function BooleanCalendar({ goal }) {
 
     // ---- cálculo de racha (streak) ----
     const streak = useMemo(() => {
-        // si no hay registros válidos, no mostramos nada
         const keys = Array.from(map.keys());
         if (keys.length === 0) return null;
 
-        // último registro (ISO mayor)
         const latestISO = keys.reduce((max, k) => (k > max ? k : max), keys[0]);
         const lastVal = map.get(latestISO);
         if (typeof lastVal !== "boolean") return null;
@@ -732,7 +715,7 @@ function BooleanCalendar({ goal }) {
                 // avanzar un día hacia atrás
                 cursor.setDate(cursor.getDate() - 1);
             } else {
-                break; // distinto estado o día sin registro → fin de racha
+                break;
             }
         }
 

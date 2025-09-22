@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/pages/Profile.jsx
-// ───────────────────────────────────────────────────────────────
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth-context";
@@ -80,7 +78,6 @@ export default function Profile() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ctxProfile]);
 
-    // Cuenta atrás en confirmación de borrado
     useEffect(() => {
         if (!confirm) {
             setTimer(10);
@@ -132,7 +129,6 @@ export default function Profile() {
 
     const startProfileTour = useCallback(() => {
         const steps = [
-            // 1) Tarjeta con datos
             {
                 element: '#tour-card',
                 popover: {
@@ -141,7 +137,6 @@ export default function Profile() {
                     side: 'bottom',
                 },
             },
-            // 2) Cerrar sesión
             {
                 element: '.logout-btn',
                 popover: {
@@ -150,7 +145,6 @@ export default function Profile() {
                     side: 'top',
                 },
             },
-            // 3) Editar datos
             {
                 element: '.edit-btn',
                 popover: {
@@ -159,7 +153,6 @@ export default function Profile() {
                     side: 'top',
                 },
             },
-            // 4) Eliminar cuenta
             {
                 element: '.delete-btn',
                 popover: {
@@ -168,7 +161,6 @@ export default function Profile() {
                     side: 'top',
                 },
             },
-            // 5) Términos y condiciones
             {
                 element: '#tour-terms',
                 popover: {
@@ -177,7 +169,6 @@ export default function Profile() {
                     side: 'left',
                 },
             },
-            // 6) Tratamiento de datos
             {
                 element: '#tour-data',
                 popover: {
@@ -186,7 +177,6 @@ export default function Profile() {
                     side: 'left',
                 },
             },
-            // 7) Volver al dashboard
             {
                 element: '#tour-back',
                 popover: {
@@ -205,7 +195,7 @@ export default function Profile() {
             nextBtnText: 'Siguiente',
             doneBtnText: 'Finalizar',
             overlayClick: false,
-            disableActiveInteraction: true, // evita que se pulsen botones durante el paso
+            disableActiveInteraction: true,
         });
 
         d.drive();

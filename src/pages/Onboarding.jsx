@@ -1,6 +1,4 @@
-// ───────────────────────────────────────────────────────────────
 // src/pages/Onboarding.jsx
-// ───────────────────────────────────────────────────────────────
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUser } from '../services/api';
@@ -40,7 +38,6 @@ export default function Onboarding() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Al crear: lanzar FLUJO obligatorio empezando por Términos
         setShowTermsFlow(true);
     };
 

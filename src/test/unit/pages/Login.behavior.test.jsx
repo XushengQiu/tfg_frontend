@@ -43,7 +43,7 @@ describe('Login (UI extra)', () => {
     test('reset password: abre modal, envía enlace y muestra confirmación', async () => {
         render(<Login />);
 
-        // Abre el modal
+        // Abrir el modal
         fireEvent.click(screen.getByRole('button', { name: /¿has olvidado tu contraseña\?/i }));
         const dialog = screen.getByRole('dialog', { name: /restablecer contraseña/i });
         const { getByLabelText, getByRole, findByText } = within(dialog);
