@@ -29,8 +29,7 @@ export default defineConfig({
                 'src/assets/**',
                 // tests y mocks
                 'src/test/**',
-                // (opcional y temporal) pages mega estatales que son casi integración
-                // quítalos cuando metas pruebas de UI de Dashboard/Profile
+                // Son páginas "shell"
                 'src/pages/Profile.jsx',
                 'src/pages/Dashboard.jsx',
                 // Fase sin integración: fuera de cobertura por ahora
